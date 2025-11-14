@@ -1,0 +1,1 @@
+Contributing guide with commit conventions and PR process

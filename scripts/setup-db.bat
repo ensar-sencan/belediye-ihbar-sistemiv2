@@ -1,0 +1,1 @@
+Windows script to setup database with migrations

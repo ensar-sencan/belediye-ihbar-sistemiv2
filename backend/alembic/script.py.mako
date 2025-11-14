@@ -1,0 +1,1 @@
+Alembic migration template with GeoAlchemy2 support
