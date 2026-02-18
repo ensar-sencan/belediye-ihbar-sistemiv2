@@ -13,14 +13,14 @@ Bu proje, Türkiye genelindeki vatandaşların yaşadıkları bölgedeki belediy
 
 ### ✨ Temel Özellikler
 
-- 📍 **Harita Tabanlı İhbar**: Lokasyon bazlı sorun bildirimi
-- 📸 **Fotoğraf Yükleme**: Görsel kanıtlarla bildirim
-- 🏷️ **Kategorizasyon**: Yol, temizlik, aydınlatma, park-bahçe vb.
-- 📊 **Durum Takibi**: Bildirimin gerçek zamanlı durumu
-- 🗺️ **İnteraktif Harita**: Tüm bildirimleri harita üzerinde görme
-- 👥 **Topluluk Doğrulama**: Diğer vatandaşların bildirimleri onaylama
-- 📱 **Responsive Tasarım**: Mobil ve masaüstü uyumlu
-- 🔐 **Güvenli Authentication**: Firebase Auth entegrasyonu
+-  **Harita Tabanlı İhbar**: Lokasyon bazlı sorun bildirimi
+-  **Fotoğraf Yükleme**: Görsel kanıtlarla bildirim
+-  **Kategorizasyon**: Yol, temizlik, aydınlatma, park-bahçe vb.
+-  **Durum Takibi**: Bildirimin gerçek zamanlı durumu
+-  **İnteraktif Harita**: Tüm bildirimleri harita üzerinde görme
+-  **Topluluk Doğrulama**: Diğer vatandaşların bildirimleri onaylama
+-  **Responsive Tasarım**: Mobil ve masaüstü uyumlu
+-  **Güvenli Authentication**: Firebase Auth entegrasyonu
 
 ## 🛠️ Teknoloji Stack
 
