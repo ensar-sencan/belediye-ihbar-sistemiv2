@@ -11,7 +11,7 @@ Vatandaşların belediyelerine çukur, yol bozukluğu, aydınlatma arızası gib
 
 Bu proje, Türkiye genelindeki vatandaşların yaşadıkları bölgedeki belediyeye anlık ihbarlarda bulunabilmelerini sağlayan açık kaynaklı bir web uygulamasıdır.
 
-### ✨ Temel Özellikler
+###  Temel Özellikler
 
 -  **Harita Tabanlı İhbar**: Lokasyon bazlı sorun bildirimi
 -  **Fotoğraf Yükleme**: Görsel kanıtlarla bildirim
@@ -22,7 +22,7 @@ Bu proje, Türkiye genelindeki vatandaşların yaşadıkları bölgedeki belediy
 -  **Responsive Tasarım**: Mobil ve masaüstü uyumlu
 -  **Güvenli Authentication**: Firebase Auth entegrasyonu
 
-## 🛠️ Teknoloji Stack
+## Teknoloji Stack
 
 ### Frontend
 - **React 18** + **TypeScript**
@@ -46,7 +46,7 @@ Bu proje, Türkiye genelindeki vatandaşların yaşadıkları bölgedeki belediy
 - **Cloudinary** - Görsel depolama
 - **JWT** - Token bazlı auth
 
-## 📦 Kurulum
+##  Kurulum
 
 ### Gereksinimler
 
@@ -100,7 +100,7 @@ npm run dev
 yarn dev
 ```
 
-## 🏗️ Proje Yapısı
+##  Proje Yapısı
 
 ```
 belediye-ihbar-sistemi/
@@ -127,14 +127,14 @@ belediye-ihbar-sistemi/
 └── README.md
 ```
 
-## 📚 Dokümantasyon
+##  Dokümantasyon
 
 - [API Dokümantasyonu](docs/API.md)
 - [Veritabanı Şeması](docs/DATABASE.md)
 - [Kurulum Kılavuzu](docs/SETUP.md)
 - [Katkıda Bulunma](CONTRIBUTING.md)
 
-## 🗺️ Roadmap
+##  Roadmap
 
 ### Faz 1: MVP (4-6 hafta)
 - [x] Proje kurulumu ve planlama
@@ -161,7 +161,7 @@ belediye-ihbar-sistemi/
 - [ ] Çoklu dil desteği
 - [ ] Dark mode
 
-## 🤝 Katkıda Bulunma
+##  Katkıda Bulunma
 
 Katkılarınızı bekliyoruz! Lütfen [CONTRIBUTING.md](CONTRIBUTING.md) dosyasını okuyun.
 
@@ -171,7 +171,7 @@ Katkılarınızı bekliyoruz! Lütfen [CONTRIBUTING.md](CONTRIBUTING.md) dosyas�
 4. Push edin (`git push origin feature/amazing-feature`)
 5. Pull Request açın
 
-## 📝 Commit Mesaj Formatı
+##  Commit Mesaj Formatı
 
 ```
 feat: Yeni özellik ekle
@@ -183,24 +183,24 @@ test: Test ekleme/güncelleme
 chore: Genel bakım işleri
 ```
 
-## 📝 Lisans
+##  Lisans
 
 Bu proje [MIT](LICENSE) lisansı altında lisanslanmıştır.
 
-## 👥 Ekip
+##  Ekip
 
 - **Ensar Sencan** - [@ensarSencanMf](https://github.com/ensarSencanMf) - Proje Sahibi
 
-## 🙏 Teşekkürler
+## Teşekkürler
 
 Bu proje, vatandaşların şehirlerini daha yaşanabilir hale getirmek için geliştirilen açık kaynaklı bir inisiyatiftir.
 
-## 📞 İletişim
+##  İletişim
 
 Sorularınız için issue açabilir veya pull request gönderebilirsiniz.
 
 ---
 
-**⭐ Projeyi beğendiyseniz yıldız vermeyi unutmayın!**
+** Projeyi beğendiyseniz yıldız vermeyi unutmayın!**
 
 **Made with ❤️ in Turkey**
