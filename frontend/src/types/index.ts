@@ -23,29 +23,32 @@ export interface AuthResponse {
 }
 
 // Report types
-export enum ReportCategory {
-  POTHOLE = 'pothole',
-  LIGHTING = 'lighting',
-  CLEANING = 'cleaning',
-  PARK = 'park',
-  WATER = 'water',
-  ROAD = 'road',
-  OTHER = 'other'
-}
+export const ReportCategory = {
+  POTHOLE: 'pothole',
+  LIGHTING: 'lighting',
+  CLEANING: 'cleaning',
+  PARK: 'park',
+  WATER: 'water',
+  ROAD: 'road',
+  OTHER: 'other'
+} as const;
+export type ReportCategory = typeof ReportCategory[keyof typeof ReportCategory];
 
-export enum ReportStatus {
-  PENDING = 'pending',
-  IN_PROGRESS = 'in_progress',
-  RESOLVED = 'resolved',
-  REJECTED = 'rejected'
-}
+export const ReportStatus = {
+  PENDING: 'pending',
+  IN_PROGRESS: 'in_progress',
+  RESOLVED: 'resolved',
+  REJECTED: 'rejected'
+} as const;
+export type ReportStatus = typeof ReportStatus[keyof typeof ReportStatus];
 
-export enum ReportPriority {
-  LOW = 'low',
-  MEDIUM = 'medium',
-  HIGH = 'high',
-  URGENT = 'urgent'
-}
+export const ReportPriority = {
+  LOW: 'low',
+  MEDIUM: 'medium',
+  HIGH: 'high',
+  URGENT: 'urgent'
+} as const;
+export type ReportPriority = typeof ReportPriority[keyof typeof ReportPriority];
 
 export interface Report {
   id: string;

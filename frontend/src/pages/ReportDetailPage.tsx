@@ -126,8 +126,6 @@ export default function ReportDetailPage() {
     );
   }
 
-  const canDelete = user?.role === 'ADMIN' || report.user_id === user?.id;
-
   return (
     <div style={{ 
       minHeight: '100vh', 
