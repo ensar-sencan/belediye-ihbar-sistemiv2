@@ -1,28 +1,25 @@
-from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime
+"""
+Municipality model
+"""
+from sqlalchemy import Column, String, Boolean
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-from geoalchemy2 import Geometry
-from datetime import datetime
-from app.db.database import Base
+from app.db.base_class import Base
+import uuid
+
 
 class Municipality(Base):
     __tablename__ = "municipalities"
     
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(200), nullable=False, unique=True, index=True)
-    city = Column(String(100), nullable=False, index=True)
-    district = Column(String(100), nullable=True)
-    
-    # Contact
-    email = Column(String, nullable=True)
-    phone = Column(String, nullable=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name = Column(String(200), nullable=False, unique=True)
+    district = Column(String(100), nullable=False)
+    city = Column(String(100), nullable=False)
+    contact_email = Column(String, nullable=True)
+    contact_phone = Column(String(20), nullable=True)
     website = Column(String, nullable=True)
-    
-    # Boundaries (GeoJSON polygon)
-    boundaries = Column(Geometry('POLYGON', srid=4326), nullable=True)
-    
-    is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    is_active = Column(Boolean, default=True, nullable=False)
     
     # Relationships
+    users = relationship("User", back_populates="municipality")
     reports = relationship("Report", back_populates="municipality")
