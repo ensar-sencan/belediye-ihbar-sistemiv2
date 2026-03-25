@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: belediye-ihbar-api
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    startCommand: alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8001
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: belediye-ihbar-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: false
+      - key: DATABASE_ECHO
+        value: false
+      - key: CORS_ORIGINS_STR
+        value: https://belediye-ihbar-sistemi.vercel.app
+
+databases:
+  - name: belediye-ihbar-db
+    databaseName: belediye_ihbar
+    user: postgres
+    plan: free
