@@ -29,12 +29,13 @@ export default function ReportsPage() {
 
   const loadReports = () => {
     setLoading(true);
+    setError(null);
     const params = new URLSearchParams();
     Object.entries(filters).forEach(([k, v]) => v && params.append(k, v));
     const url = params.toString() ? `/reports/?${params}` : '/reports/';
     axiosInstance.get(url)
       .then(r => { setReports(Array.isArray(r.data) ? r.data : []); setLoading(false); })
-      .catch(() => { setError('İhbarlar yüklenemedi.'); setLoading(false); });
+      .catch(() => { setError('İhbarlar yüklenemedi. Sunucu başlıyor olabilir, lütfen tekrar deneyin.'); setLoading(false); });
   };
 
   useEffect(() => { loadReports(); }, [filters]);
@@ -49,7 +50,10 @@ export default function ReportsPage() {
   );
 
   if (error) return (
-    <div className="flex items-center justify-center h-64 text-red-500">{error}</div>
+    <div className="flex flex-col items-center justify-center h-64 gap-4">
+      <p className="text-red-500 text-center">{error}</p>
+      <button onClick={loadReports} className="btn-primary">Tekrar Dene</button>
+    </div>
   );
 
   return (

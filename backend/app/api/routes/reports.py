@@ -30,24 +30,7 @@ router = APIRouter()
 @router.get(
     "/",
     summary="📋 Tüm İhbarları Listele",
-    description="""
-    Sistemdeki tüm ihbarları listeler (sayfalama ile).
-    
-    **Parametreler:**
-    - `skip`: Kaç ihbar atlanacak (varsayılan:  0)
-    - `limit`: Kaç ihbar gösterilecek (varsayılan: 20, max: 100)
-    - `status`: Duruma göre filtrele (opsiyonel)
-    - `category`: Kategoriye göre filtrele (opsiyonel)
-    
-    **Sıralama:** En yeni ihbarlar önce
-    
-    **İlişkiler:** User ve Municipality bilgileri dahil edilir
-    
-    **Örnek:**
-    ```
-    GET /api/v1/reports/? skip=0&limit=10&status=pending
-    ```
-    """,
+    response_model=List[ReportSchema],
     response_description="İhbarlar başarıyla listelendi"
 )
 def get_reports(
