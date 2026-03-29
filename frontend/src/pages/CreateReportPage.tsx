@@ -54,7 +54,11 @@ export default function CreateReportPage() {
       }
       navigate('/reports');
     } catch (err: any) {
-      alert('Hata: ' + (err.response?.data?.detail || err.message));
+      const detail = err.response?.data?.detail;
+      const msg = Array.isArray(detail)
+        ? detail.map((e: any) => `${e.loc?.slice(-1)[0]}: ${e.msg}`).join('\n')
+        : (typeof detail === 'string' ? detail : err.message);
+      alert('Hata: ' + msg);
     } finally {
       setLoading(false);
     }
