@@ -30,7 +30,6 @@ router = APIRouter()
 @router.get(
     "/",
     summary="📋 Tüm İhbarları Listele",
-    response_model=List[ReportSchema],
     response_description="İhbarlar başarıyla listelendi"
 )
 def get_reports(
@@ -123,8 +122,30 @@ def get_reports(
     
     # Pagination
     reports = query.offset(skip).limit(limit).all()
-    
-    return reports
+
+    return [
+        {
+            "id": str(r.id),
+            "title": r.title,
+            "description": r.description,
+            "category": r.category,
+            "status": r.status,
+            "priority": r.priority,
+            "address": r.address,
+            "latitude": r.latitude,
+            "longitude": r.longitude,
+            "image_urls": list(r.image_urls) if r.image_urls else [],
+            "upvotes": r.upvotes,
+            "downvotes": r.downvotes,
+            "is_anonymous": r.is_anonymous,
+            "user_id": str(r.user_id),
+            "municipality_id": str(r.municipality_id) if r.municipality_id else None,
+            "created_at": r.created_at.isoformat() if r.created_at else None,
+            "updated_at": r.updated_at.isoformat() if r.updated_at else None,
+            "resolved_at": r.resolved_at.isoformat() if r.resolved_at else None,
+        }
+        for r in reports
+    ]
 
 
 @router.get(
