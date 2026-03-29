@@ -34,16 +34,8 @@ export default function ReportsPage() {
     Object.entries(filters).forEach(([k, v]) => v && params.append(k, v));
     const url = params.toString() ? `/reports/?${params}` : '/reports/';
     axiosInstance.get(url)
-      .then(r => {
-        console.log('[Reports] status:', r.status, 'data type:', typeof r.data, 'isArray:', Array.isArray(r.data), 'data:', r.data);
-        setReports(Array.isArray(r.data) ? r.data : []);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error('[Reports] error:', err.response?.status, err.response?.data, err.message);
-        setError('İhbarlar yüklenemedi. Sunucu başlıyor olabilir, lütfen tekrar deneyin.');
-        setLoading(false);
-      });
+      .then(r => { setReports(Array.isArray(r.data) ? r.data : []); setLoading(false); })
+      .catch(() => { setError('İhbarlar yüklenemedi. Sunucu başlıyor olabilir, lütfen tekrar deneyin.'); setLoading(false); });
   };
 
   useEffect(() => { loadReports(); }, [filters]);
