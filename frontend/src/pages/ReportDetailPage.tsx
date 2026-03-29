@@ -2,16 +2,31 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axiosInstance from '../lib/axios';
 import { useAuthStore } from '../store/authStore';
+import {
+  ArrowLeft, MapPin, Calendar, ThumbsUp, ThumbsDown,
+  MessageSquare, Trash2, Send, Loader, User,
+} from 'lucide-react';
 
 type Comment = {
-  id: string;
-  user_id: string;
-  content: string;
-  created_at: string;
-  user?:  {
-    full_name: string;
-    email: string;
-  };
+  id: string; user_id: string; content: string; created_at: string;
+  user?: { full_name: string; email: string };
+};
+
+const STATUS_MAP: Record<string, { label: string; cls: string }> = {
+  pending:     { label: 'Bekliyor',    cls: 'badge-pending' },
+  in_progress: { label: 'İşlemde',    cls: 'badge-in_progress' },
+  resolved:    { label: 'Çözüldü',    cls: 'badge-resolved' },
+  rejected:    { label: 'Reddedildi', cls: 'badge-rejected' },
+};
+const PRIORITY_MAP: Record<string, { label: string; cls: string }> = {
+  low:    { label: 'Düşük',  cls: 'badge-low' },
+  medium: { label: 'Orta',   cls: 'badge-medium' },
+  high:   { label: 'Yüksek', cls: 'badge-high' },
+  urgent: { label: 'Acil',   cls: 'badge-urgent' },
+};
+const CATEGORY_LABELS: Record<string, string> = {
+  pothole: 'Çukur', lighting: 'Aydınlatma', cleaning: 'Temizlik',
+  park: 'Park/Bahçe', water: 'Su/Kanalizasyon', road: 'Yol', other: 'Diğer',
 };
 
 export default function ReportDetailPage() {
@@ -22,474 +37,177 @@ export default function ReportDetailPage() {
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
   const [loading, setLoading] = useState(true);
+  const [voting, setVoting] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    loadReport();
-    loadComments();
-  }, [id]);
+  useEffect(() => { loadReport(); loadComments(); }, [id]);
 
-  const loadReport = async () => {
+  const loadReport = () =>
+    axiosInstance.get(`/reports/${id}`)
+      .then(r => { setReport(r.data); setLoading(false); })
+      .catch(() => setLoading(false));
+
+  const loadComments = () =>
+    axiosInstance.get(`/reports/${id}/comments`)
+      .then(r => setComments(r.data))
+      .catch(() => {});
+
+  const handleVote = async (type: string) => {
+    setVoting(true);
     try {
-      console.log('Loading report:', id);
-      const res = await axiosInstance.get(`/reports/${id}`);
-      console.log('Report loaded:', res.data);
-      setReport(res.data);
-      setLoading(false);
-    } catch (err) {
-      console.error('Error loading report:', err);
-      setLoading(false);
-    }
-  };
-
-  const loadComments = async () => {
-    try {
-      const res = await axiosInstance.get(`/reports/${id}/comments`);
-      console.log('Comments loaded:', res.data);
-      setComments(res.data);
-    } catch (err) {
-      console.error('Error loading comments:', err);
-    }
-  };
-
-  const handleVote = async (voteType: string) => {
-    try {
-      console.log(`Voting:  ${voteType}`);
-      const res = await axiosInstance.post(`/reports/${id}/vote?vote_type=${voteType}`);
-      console.log('Vote success:', res.data);
-      setReport(res.data);
-      alert(`${voteType === 'upvote' ? 'Beğendiniz!' : 'Beğenmediniz!'}`);
+      const r = await axiosInstance.post(`/reports/${id}/vote?vote_type=${type}`);
+      setReport(r.data);
     } catch (err: any) {
-      console.error('Vote error:', err);
-      alert('Hata:  ' + (err.response?.data?.detail || err.message));
-    }
+      alert(err.response?.data?.detail || 'Oy verilemedi.');
+    } finally { setVoting(false); }
   };
 
   const handleAddComment = async () => {
-    if (!newComment.trim()) {
-      alert('Yorum boş olamaz!');
-      return;
-    }
-
+    if (!newComment.trim()) return;
+    setSubmitting(true);
     try {
-      await axiosInstance.post(`/reports/${id}/comments`, {
-        content: newComment
-      });
+      await axiosInstance.post(`/reports/${id}/comments`, { content: newComment });
       setNewComment('');
       loadComments();
-      alert('Yorum eklendi!');
-    } catch (err:  any) {
-      console.error('Error adding comment:', err);
-      alert('Hata: ' + (err.response?.data?.detail || err.message));
-    }
+    } catch (err: any) {
+      alert(err.response?.data?.detail || 'Yorum eklenemedi.');
+    } finally { setSubmitting(false); }
   };
 
   const handleDeleteComment = async (commentId: string) => {
-    if (! confirm('Bu yorumu silmek istediğinizden emin misiniz?')) return;
-
+    if (!confirm('Bu yorumu silmek istediğinizden emin misiniz?')) return;
     try {
       await axiosInstance.delete(`/comments/${commentId}`);
       loadComments();
-      alert('Yorum silindi!');
     } catch (err: any) {
-      console.error('Error deleting comment:', err);
-      alert('Hata: ' + (err.response?.data?.detail || err.message));
+      alert(err.response?.data?.detail || 'Silinemedi.');
     }
   };
 
-  if (loading) {
-    return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: '100vh',
-        fontSize: '32px',
-        fontWeight: 'bold'
-      }}>
-        Yükleniyor...
-      </div>
-    );
-  }
+  if (loading) return (
+    <div className="flex items-center justify-center h-64">
+      <Loader className="w-8 h-8 text-indigo-600 animate-spin" />
+    </div>
+  );
 
-  if (!report) {
-    return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems:  'center', 
-        height: '100vh',
-        fontSize: '24px',
-        color: '#ef4444'
-      }}>
-        İhbar bulunamadı
-      </div>
-    );
-  }
+  if (!report) return (
+    <div className="flex items-center justify-center h-64 text-slate-400">İhbar bulunamadı.</div>
+  );
+
+  const status = STATUS_MAP[report.status] ?? { label: report.status, cls: 'badge-low' };
+  const priority = PRIORITY_MAP[report.priority] ?? { label: report.priority, cls: 'badge-low' };
 
   return (
-    <div style={{ 
-      minHeight: '100vh', 
-      backgroundColor: '#f3f4f6', 
-      padding: '32px' 
-    }}>
-      <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-        {/* HEADER */}
-        <button
-          onClick={() => navigate('/reports')}
-          style={{
-            marginBottom: '24px',
-            padding: '12px 24px',
-            fontSize: '16px',
-            backgroundColor: 'white',
-            border: '2px solid #e5e7eb',
-            borderRadius: '8px',
-            cursor: 'pointer',
-            fontWeight: '600'
-          }}
-        >
-          ← Geri
-        </button>
+    <div className="max-w-3xl">
+      <button onClick={() => navigate('/reports')} className="btn-secondary mb-6">
+        <ArrowLeft className="w-4 h-4" /> Geri
+      </button>
 
-        {/* MAIN CARD */}
-        <div style={{
-          backgroundColor: 'white',
-          borderRadius: '12px',
-          padding: '32px',
-          boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-          marginBottom: '24px'
-        }}>
-          {/* TITLE */}
-          <h1 style={{ 
-            fontSize: '36px', 
-            fontWeight:  'bold', 
-            marginBottom: '16px',
-            color: '#1f2937'
-          }}>
-            {report.title}
-          </h1>
-
-          {/* BADGES */}
-          <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
-            <span style={{
-              padding: '8px 16px',
-              backgroundColor: 
-                report.status === 'pending' ? '#fef3c7' :  
-                report.status === 'in_progress' ? '#dbeafe' : 
-                report.status === 'resolved' ? '#d1fae5' : '#fee2e2',
-              color: 
-                report.status === 'pending' ? '#92400e' : 
-                report.status === 'in_progress' ? '#1e40af' :
-                report.status === 'resolved' ? '#065f46' : '#991b1b',
-              borderRadius: '999px',
-              fontSize: '14px',
-              fontWeight: 600,
-            }}>
-              {report.status === 'pending' && '⏳ Bekliyor'}
-              {report.status === 'in_progress' && '🔄 İşlemde'}
-              {report.status === 'resolved' && '✅ Çözüldü'}
-              {report.status === 'rejected' && '❌ Reddedildi'}
-            </span>
-
-            <span style={{
-              padding: '8px 16px',
-              backgroundColor: 
-                report.priority === 'urgent' ? '#fee2e2' : 
-                report.priority === 'high' ? '#fed7aa' :
-                report.priority === 'medium' ? '#fef3c7' :  '#d1fae5',
-              color: 
-                report.priority === 'urgent' ? '#991b1b' :
-                report.priority === 'high' ? '#9a3412' :
-                report.priority === 'medium' ? '#92400e' : '#065f46',
-              borderRadius:  '999px',
-              fontSize:  '14px',
-              fontWeight: 600,
-            }}>
-              {report.priority === 'urgent' && '🔴 Acil'}
-              {report.priority === 'high' && '🟠 Yüksek'}
-              {report.priority === 'medium' && '🟡 Orta'}
-              {report.priority === 'low' && '🟢 Düşük'}
-            </span>
-
-            <span style={{
-              padding: '8px 16px',
-              backgroundColor: '#f3f4f6',
-              color: '#374151',
-              borderRadius: '999px',
-              fontSize: '14px',
-              fontWeight:  600,
-            }}>
-              {report.category}
-            </span>
-
-            <span style={{
-              padding: '8px 16px',
-              backgroundColor: '#fef3c7',
-              color: '#92400e',
-              borderRadius:  '999px',
-              fontSize:  '14px',
-              fontWeight: 600,
-            }}>
-              {new Date(report.created_at).toLocaleDateString('tr-TR')}
-            </span>
-          </div>
-
-          {/* DESCRIPTION */}
-          <div style={{ marginBottom: '30px' }}>
-            <h2 style={{ 
-              fontSize:  '20px', 
-              fontWeight: '600',
-              marginBottom: '10px',
-              color: '#374151'
-            }}>
-              Açıklama
-            </h2>
-            <p style={{ 
-              fontSize: '16px', 
-              lineHeight: '1.6',
-              color: '#4b5563'
-            }}>
-              {report.description}
-            </p>
-          </div>
-
-          {/* LOCATION */}
-          {report.address && (
-            <div style={{ marginBottom: '30px' }}>
-              <h2 style={{ 
-                fontSize: '20px', 
-                fontWeight:  '600',
-                marginBottom:  '10px',
-                color:  '#374151'
-              }}>
-                Konum
-              </h2>
-              <p style={{ 
-                fontSize: '16px',
-                color: '#4b5563'
-              }}>
-                📍 {report.address}
-              </p>
-            </div>
-          )}
-
-          {/* IMAGES */}
-          {report.image_urls && report.image_urls.length > 0 && (
-            <div style={{ marginBottom: '30px' }}>
-              <h2 style={{ 
-                fontSize: '20px', 
-                fontWeight: '600',
-                marginBottom: '10px',
-                color: '#374151'
-              }}>
-                📸 Fotoğraflar
-              </h2>
-              <div style={{ 
-                display: 'grid', 
-                gridTemplateColumns:  'repeat(auto-fill, minmax(200px, 1fr))', 
-                gap: '12px' 
-              }}>
-                {report.image_urls.map((url:  string, i: number) => (
-                  <img
-                    key={i}
-                    src={`http://localhost:8001${url}`}
-                    alt={`Report image ${i + 1}`}
-                    style={{
-                      width: '100%',
-                      height: '200px',
-                      objectFit: 'cover',
-                      borderRadius: '8px',
-                      border:  '2px solid #e5e7eb',
-                      cursor: 'pointer'
-                    }}
-                    onClick={() => window.open(`http://localhost:8001${url}`, '_blank')}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* VOTING */}
-          <div style={{ 
-            borderTop: '2px solid #e5e7eb',
-            paddingTop: '20px',
-            marginBottom: '20px'
-          }}>
-            <h2 style={{ 
-              fontSize: '20px', 
-              fontWeight: '600',
-              marginBottom: '10px',
-              color: '#374151'
-            }}>
-              Bu ihbar hakkında ne düşünüyorsunuz? 
-            </h2>
-            <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-              <button
-                onClick={() => handleVote('upvote')}
-                style={{
-                  padding: '12px 24px',
-                  fontSize: '18px',
-                  fontWeight: '600',
-                  backgroundColor: '#dcfce7',
-                  color: '#166534',
-                  border: '2px solid #86efac',
-                  borderRadius:  '8px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}
-              >
-                👍 Beğendim ({report.upvotes})
-              </button>
-
-              <button
-                onClick={() => handleVote('downvote')}
-                style={{
-                  padding: '12px 24px',
-                  fontSize: '18px',
-                  fontWeight:  '600',
-                  backgroundColor:  '#fee2e2',
-                  color: '#991b1b',
-                  border: '2px solid #fca5a5',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}
-              >
-                👎 Beğenmedim ({report.downvotes})
-              </button>
-            </div>
+      {/* Main Card */}
+      <div className="card mb-4">
+        <div className="flex items-start justify-between gap-4 mb-4">
+          <h1 className="text-xl font-bold text-slate-900 leading-snug">{report.title}</h1>
+          <div className="flex gap-2 flex-shrink-0">
+            <span className={`badge ${status.cls}`}>{status.label}</span>
+            <span className={`badge ${priority.cls}`}>{priority.label}</span>
           </div>
         </div>
 
-        {/* COMMENTS SECTION */}
-        <div style={{
-          backgroundColor: 'white',
-          borderRadius: '12px',
-          padding: '32px',
-          boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
-        }}>
-          <h2 style={{ 
-            fontSize: '24px', 
-            fontWeight:  '600',
-            marginBottom:  '24px',
-            color: '#1f2937'
-          }}>
-            💬 Yorumlar ({comments.length})
-          </h2>
+        <div className="flex items-center gap-4 text-xs text-slate-400 mb-5">
+          <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" />
+            {new Date(report.created_at).toLocaleDateString('tr-TR')}
+          </span>
+          <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">
+            {CATEGORY_LABELS[report.category] ?? report.category}
+          </span>
+        </div>
 
-          {/* ADD COMMENT FORM */}
-          <div style={{ marginBottom: '32px' }}>
-            <textarea
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-              placeholder="Yorumunuzu yazın..."
-              rows={3}
-              style={{
-                width: '100%',
-                padding: '12px',
-                fontSize: '16px',
-                border: '2px solid #e5e7eb',
-                borderRadius: '8px',
-                marginBottom: '12px',
-                resize: 'vertical'
-              }}
-            />
-            <button
-              onClick={handleAddComment}
-              style={{
-                padding:  '12px 24px',
-                fontSize: '16px',
-                fontWeight: '600',
-                backgroundColor: '#2563eb',
-                color: 'white',
-                border: 'none',
-                borderRadius:  '8px',
-                cursor:  'pointer'
-              }}
-            >
-              💬 Yorum Yap
+        <p className="text-slate-600 text-sm leading-relaxed mb-5">{report.description}</p>
+
+        {report.address && (
+          <div className="flex items-center gap-2 text-sm text-slate-500 mb-5">
+            <MapPin className="w-4 h-4 text-slate-400" /> {report.address}
+          </div>
+        )}
+
+        {/* Images */}
+        {report.image_urls?.length > 0 && (
+          <div className="grid grid-cols-3 gap-2 mb-5">
+            {report.image_urls.map((url: string, i: number) => (
+              <img key={i} src={`/uploads${url.split('/uploads')[1] ?? url}`} alt=""
+                onClick={() => window.open(url, '_blank')}
+                className="w-full h-32 object-cover rounded-xl border border-slate-100 cursor-pointer hover:opacity-90 transition-opacity" />
+            ))}
+          </div>
+        )}
+
+        {/* Vote */}
+        <div className="pt-4 border-t border-slate-100">
+          <p className="text-sm font-medium text-slate-700 mb-3">Bu ihbar hakkında ne düşünüyorsunuz?</p>
+          <div className="flex gap-3">
+            <button onClick={() => handleVote('upvote')} disabled={voting}
+              className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl text-sm font-medium hover:bg-emerald-100 transition-all disabled:opacity-50">
+              <ThumbsUp className="w-4 h-4" /> Beğendim ({report.upvotes})
+            </button>
+            <button onClick={() => handleVote('downvote')} disabled={voting}
+              className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 border border-red-200 rounded-xl text-sm font-medium hover:bg-red-100 transition-all disabled:opacity-50">
+              <ThumbsDown className="w-4 h-4" /> Beğenmedim ({report.downvotes})
             </button>
           </div>
+        </div>
+      </div>
 
-          {/* COMMENTS LIST */}
-          {comments.length === 0 ?  (
-            <p style={{ 
-              textAlign: 'center', 
-              color: '#6b7280',
-              fontSize: '16px',
-              padding: '32px'
-            }}>
-              Henüz yorum yapılmamış.  İlk yorumu siz yapın!
-            </p>
-          ) : (
-            <div style={{ display: 'flex', flexDirection:  'column', gap: '16px' }}>
-              {comments.map((comment) => (
-                <div
-                  key={comment.id}
-                  style={{
-                    padding: '16px',
-                    backgroundColor: '#f9fafb',
-                    borderRadius: '8px',
-                    border: '1px solid #e5e7eb'
-                  }}
-                >
-                  <div style={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between',
-                    alignItems: 'flex-start',
-                    marginBottom: '8px'
-                  }}>
+      {/* Comments */}
+      <div className="card">
+        <div className="flex items-center gap-2 mb-5">
+          <MessageSquare className="w-4 h-4 text-slate-400" />
+          <h2 className="font-semibold text-slate-900">Yorumlar ({comments.length})</h2>
+        </div>
+
+        {/* Add Comment */}
+        <div className="flex gap-3 mb-6">
+          <textarea value={newComment} rows={2} placeholder="Yorumunuzu yazın..."
+            onChange={(e) => setNewComment(e.target.value)}
+            className="input flex-1 resize-none" />
+          <button onClick={handleAddComment} disabled={submitting || !newComment.trim()}
+            className="btn-primary self-end px-4">
+            {submitting ? <Loader className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+          </button>
+        </div>
+
+        {/* List */}
+        {comments.length === 0 ? (
+          <p className="text-center text-slate-400 text-sm py-8">Henüz yorum yok. İlk yorumu siz yapın!</p>
+        ) : (
+          <div className="space-y-3">
+            {comments.map((c) => (
+              <div key={c.id} className="flex gap-3 p-3 bg-slate-50 rounded-xl">
+                <div className="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center flex-shrink-0">
+                  <User className="w-4 h-4 text-slate-500" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2">
                     <div>
-                      <p style={{ 
-                        fontWeight: '600',
-                        fontSize: '14px',
-                        color: '#374151',
-                        marginBottom: '4px'
-                      }}>
-                        👤 {comment.user?.full_name || 'Kullanıcı'}
-                      </p>
-                      <p style={{ 
-                        fontSize: '12px',
-                        color: '#9ca3af'
-                      }}>
-                        {new Date(comment.created_at).toLocaleString('tr-TR')}
-                      </p>
+                      <span className="text-sm font-semibold text-slate-900">
+                        {c.user?.full_name || 'Kullanıcı'}
+                      </span>
+                      <span className="text-xs text-slate-400 ml-2">
+                        {new Date(c.created_at).toLocaleString('tr-TR')}
+                      </span>
                     </div>
-                    
-                    {/* DELETE BUTTON (only for comment owner or admin) */}
-                    {(user?.id === comment.user_id || user?.role === 'ADMIN') && (
-                      <button
-                        onClick={() => handleDeleteComment(comment.id)}
-                        style={{
-                          padding: '6px 12px',
-                          fontSize: '12px',
-                          backgroundColor: '#fee2e2',
-                          color: '#991b1b',
-                          border: 'none',
-                          borderRadius: '6px',
-                          cursor: 'pointer',
-                          fontWeight: '600'
-                        }}
-                      >
-                        🗑️ Sil
+                    {(user?.id === c.user_id || user?.role === 'ADMIN') && (
+                      <button onClick={() => handleDeleteComment(c.id)}
+                        className="text-slate-300 hover:text-red-500 transition-colors">
+                        <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     )}
                   </div>
-                  <p style={{ 
-                    fontSize: '16px',
-                    color: '#4b5563',
-                    lineHeight: '1.5'
-                  }}>
-                    {comment.content}
-                  </p>
+                  <p className="text-sm text-slate-600 mt-1">{c.content}</p>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

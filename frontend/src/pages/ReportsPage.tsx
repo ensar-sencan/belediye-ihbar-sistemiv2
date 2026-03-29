@@ -1,17 +1,22 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../lib/axios';
+import { Search, Filter, PlusCircle, MapPin, ThumbsUp, ThumbsDown, Loader, X } from 'lucide-react';
 
 type Report = {
-  id: string;
-  title: string;
-  description: string;
-  category: string;
-  status: string;
-  priority: string;
-  address?:  string;
-  upvotes:  number;
-  downvotes:  number;
+  id: string; title: string; description: string; category: string;
+  status: string; priority: string; address?: string; upvotes: number; downvotes: number;
+};
+
+const STATUS_LABELS: Record<string, string> = {
+  pending: 'Bekliyor', in_progress: 'İşlemde', resolved: 'Çözüldü', rejected: 'Reddedildi',
+};
+const PRIORITY_LABELS: Record<string, string> = {
+  low: 'Düşük', medium: 'Orta', high: 'Yüksek', urgent: 'Acil',
+};
+const CATEGORY_LABELS: Record<string, string> = {
+  pothole: 'Çukur', lighting: 'Aydınlatma', cleaning: 'Temizlik',
+  park: 'Park/Bahçe', water: 'Su/Kanalizasyon', road: 'Yol', other: 'Diğer',
 };
 
 export default function ReportsPage() {
@@ -19,359 +24,125 @@ export default function ReportsPage() {
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
-  // FILTER STATE
-  const [filters, setFilters] = useState({
-    category: '',
-    status: '',
-    priority: '',
-    search: ''
-  });
-
-  // TEMP SEARCH (Enter'a basana kadar bekler)
   const [searchInput, setSearchInput] = useState('');
+  const [filters, setFilters] = useState({ category: '', status: '', priority: '', search: '' });
 
   const loadReports = () => {
     setLoading(true);
-    
-    // Build query params
     const params = new URLSearchParams();
-    if (filters.category) params.append('category', filters.category);
-    if (filters.status) params.append('status', filters.status);
-    if (filters.priority) params.append('priority', filters.priority);
-    if (filters.search) params.append('search', filters.search);
-    
-    const queryString = params.toString();
-    const url = queryString ? `/reports/?${queryString}` : '/reports/';
-    
-    console.log('Loading reports with filters:', url);
-    
+    Object.entries(filters).forEach(([k, v]) => v && params.append(k, v));
+    const url = params.toString() ? `/reports/?${params}` : '/reports/';
     axiosInstance.get(url)
-      .then(res => {
-        setReports(Array.isArray(res.data) ? res.data : []);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error(err);
-        setError('İhbarlar yüklenemedi.');
-        setLoading(false);
-      });
+      .then(r => { setReports(Array.isArray(r.data) ? r.data : []); setLoading(false); })
+      .catch(() => { setError('İhbarlar yüklenemedi.'); setLoading(false); });
   };
 
-  useEffect(() => {
-    loadReports();
-  }, [filters]); // filters değişince yükle
+  useEffect(() => { loadReports(); }, [filters]);
 
-  const clearFilters = () => {
-    setFilters({
-      category: '',
-      status: '',
-      priority: '',
-      search: ''
-    });
-    setSearchInput(''); // Search input'u da temizle
-  };
+  const clearFilters = () => { setFilters({ category: '', status: '', priority: '', search: '' }); setSearchInput(''); };
+  const hasFilters = Object.values(filters).some(Boolean);
 
-  // ENTER'A BASILINCA ARAMA YAP
-  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      setFilters({ ...filters, search: searchInput });
-    }
-  };
+  if (loading) return (
+    <div className="flex items-center justify-center h-64">
+      <Loader className="w-8 h-8 text-indigo-600 animate-spin" />
+    </div>
+  );
 
-  if (loading) {
-    return (
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        height: '100vh',
-        backgroundColor: '#f3f4f6',
-        fontSize: '32px',
-        fontWeight: 'bold'
-      }}>
-        Yükleniyor... 
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div style={{
-        display:  'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        height: '100vh',
-        backgroundColor: '#fee2e2',
-        fontSize: '24px',
-        fontWeight: 'bold',
-        color: '#b91c1c'
-      }}>
-        {error}
-      </div>
-    );
-  }
+  if (error) return (
+    <div className="flex items-center justify-center h-64 text-red-500">{error}</div>
+  );
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      backgroundColor: '#f3f4f6',
-      padding: '32px'
-    }}>
-      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-        {/* HEADER */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '32px'
-        }}>
-          <h1 style={{ fontSize: '36px', fontWeight: 'bold' }}>
-            📋 İhbarlar ({reports.length})
-          </h1>
-          <button
-            onClick={() => navigate('/reports/create')}
-            style={{
-              backgroundColor: '#2563eb',
-              color: 'white',
-              padding: '12px 24px',
-              borderRadius: '8px',
-              fontSize: '18px',
-              fontWeight: 600,
-              border: 'none',
-              cursor: 'pointer'
-            }}
-          >
-            + Yeni İhbar
-          </button>
+    <div>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">İhbarlar</h1>
+          <p className="text-slate-500 text-sm mt-0.5">{reports.length} ihbar listeleniyor</p>
         </div>
+        <button onClick={() => navigate('/reports/create')} className="btn-primary">
+          <PlusCircle className="w-4 h-4" /> Yeni İhbar
+        </button>
+      </div>
 
-        {/* FILTERS */}
-        <div style={{
-          backgroundColor: 'white',
-          borderRadius: '12px',
-          padding: '24px',
-          marginBottom: '24px',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-            <h2 style={{ fontSize: '20px', fontWeight: '600' }}>🔍 Filtrele</h2>
-            <button
-              onClick={clearFilters}
-              style={{
-                padding: '8px 16px',
-                fontSize: '14px',
-                backgroundColor: '#f3f4f6',
-                border: '2px solid #e5e7eb',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontWeight: '600'
-              }}
-            >
-              ✖️ Temizle
+      {/* Filters */}
+      <div className="card mb-6">
+        <div className="flex items-center gap-2 mb-4">
+          <Filter className="w-4 h-4 text-slate-400" />
+          <span className="text-sm font-semibold text-slate-700">Filtrele</span>
+          {hasFilters && (
+            <button onClick={clearFilters}
+              className="ml-auto flex items-center gap-1 text-xs text-slate-500 hover:text-red-500 transition-colors">
+              <X className="w-3 h-3" /> Temizle
             </button>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
-            {/* SEARCH - ENTER İLE ARAMA */}
-            <input
-              type="text"
-              placeholder="🔎 Ara... "
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              onKeyDown={handleSearchKeyDown}
-              style={{
-                padding: '12px',
-                fontSize: '16px',
-                border: '2px solid #e5e7eb',
-                borderRadius: '8px'
-              }}
-            />
-
-            {/* CATEGORY - ANINDA FİLTRELE */}
-            <select
-              value={filters.category}
-              onChange={(e) => setFilters({ ...filters, category: e.target.value })}
-              style={{
-                padding: '12px',
-                fontSize: '16px',
-                border: '2px solid #e5e7eb',
-                borderRadius: '8px',
-                cursor: 'pointer'
-              }}
-            >
-              <option value="">Tüm Kategoriler</option>
-              <option value="pothole">🕳️ Çukur</option>
-              <option value="lighting">💡 Aydınlatma</option>
-              <option value="cleaning">🧹 Temizlik</option>
-              <option value="park">🌳 Park/Bahçe</option>
-              <option value="water">💧 Su/Kanalizasyon</option>
-              <option value="road">🛣️ Yol</option>
-              <option value="other">📦 Diğer</option>
-            </select>
-
-            {/* STATUS - ANINDA FİLTRELE */}
-            <select
-              value={filters.status}
-              onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-              style={{
-                padding: '12px',
-                fontSize: '16px',
-                border: '2px solid #e5e7eb',
-                borderRadius: '8px',
-                cursor: 'pointer'
-              }}
-            >
-              <option value="">Tüm Durumlar</option>
-              <option value="pending">⏳ Bekliyor</option>
-              <option value="in_progress">🔄 İşlemde</option>
-              <option value="resolved">✅ Çözüldü</option>
-              <option value="rejected">❌ Reddedildi</option>
-            </select>
-
-            {/* PRIORITY - ANINDA FİLTRELE */}
-            <select
-              value={filters.priority}
-              onChange={(e) => setFilters({ ...filters, priority: e.target.value })}
-              style={{
-                padding: '12px',
-                fontSize: '16px',
-                border: '2px solid #e5e7eb',
-                borderRadius: '8px',
-                cursor: 'pointer'
-              }}
-            >
-              <option value="">Tüm Öncelikler</option>
-              <option value="low">🟢 Düşük</option>
-              <option value="medium">🟡 Orta</option>
-              <option value="high">🟠 Yüksek</option>
-              <option value="urgent">🔴 Acil</option>
-            </select>
-          </div>
+          )}
         </div>
-
-        {/* REPORTS */}
-        {reports.length === 0 ? (
-          <div style={{
-            backgroundColor: 'white',
-            borderRadius: '8px',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-            padding: '48px',
-            textAlign: 'center'
-          }}>
-            <p style={{ fontSize: '24px', color: '#6b7280', marginBottom: '16px' }}>
-              Hiç ihbar bulunamadı
-            </p>
-            {(filters.category || filters.status || filters.priority || filters.search) && (
-              <button
-                onClick={clearFilters}
-                style={{
-                  color: '#2563eb',
-                  fontSize: '18px',
-                  background: 'none',
-                  border: 'none',
-                  textDecoration: 'underline',
-                  cursor: 'pointer'
-                }}
-              >
-                Filtreleri temizle
-              </button>
-            )}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input type="text" placeholder="Ara..." value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && setFilters({ ...filters, search: searchInput })}
+              className="input pl-9" />
           </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {reports.map((r) => (
-              <div
-                key={r.id}
-                onClick={() => {
-                  console.log('TIKLANDI!  Report ID:', r.id);
-                  navigate(`/reports/${r.id}`);
-                }}
-                style={{
-                  backgroundColor: 'white',
-                  borderRadius:  '8px',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                  padding: '24px',
-                  border: '2px solid #3b82f6',
-                  cursor: 'pointer',
-                  transition: 'transform 0.2s, box-shadow 0.2s'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-4px)';
-                  e.currentTarget.style.boxShadow = '0 8px 16px rgba(0,0,0,0.15)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-                  <h3 style={{ fontSize: '24px', fontWeight: 'bold', color: '#1f2937' }}>
+          <select value={filters.category} onChange={(e) => setFilters({ ...filters, category: e.target.value })} className="input">
+            <option value="">Tüm Kategoriler</option>
+            {Object.entries(CATEGORY_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+          </select>
+          <select value={filters.status} onChange={(e) => setFilters({ ...filters, status: e.target.value })} className="input">
+            <option value="">Tüm Durumlar</option>
+            {Object.entries(STATUS_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+          </select>
+          <select value={filters.priority} onChange={(e) => setFilters({ ...filters, priority: e.target.value })} className="input">
+            <option value="">Tüm Öncelikler</option>
+            {Object.entries(PRIORITY_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+          </select>
+        </div>
+      </div>
+
+      {/* List */}
+      {reports.length === 0 ? (
+        <div className="card text-center py-16">
+          <p className="text-slate-400 text-lg">Hiç ihbar bulunamadı</p>
+          {hasFilters && (
+            <button onClick={clearFilters} className="mt-3 text-sm text-indigo-600 hover:underline">
+              Filtreleri temizle
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {reports.map((r) => (
+            <div key={r.id} onClick={() => navigate(`/reports/${r.id}`)}
+              className="card hover:shadow-md hover:border-indigo-100 border border-slate-100 cursor-pointer transition-all duration-200 group">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-slate-900 group-hover:text-indigo-700 transition-colors truncate">
                     {r.title}
                   </h3>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <span style={{
-                      padding: '8px 16px',
-                      backgroundColor: 
-                        r.status === 'pending' ? '#fef3c7' :  
-                        r.status === 'in_progress' ? '#dbeafe' : 
-                        r.status === 'resolved' ? '#d1fae5' :  '#fee2e2',
-                      color: 
-                        r.status === 'pending' ? '#92400e' : 
-                        r.status === 'in_progress' ? '#1e40af' :
-                        r.status === 'resolved' ?  '#065f46' : '#991b1b',
-                      borderRadius: '999px',
-                      fontSize: '14px',
-                      fontWeight: 600,
-                    }}>
-                      {r.status === 'pending' && '⏳ Bekliyor'}
-                      {r.status === 'in_progress' && '🔄 İşlemde'}
-                      {r.status === 'resolved' && '✅ Çözüldü'}
-                      {r.status === 'rejected' && '❌ Reddedildi'}
-                    </span>
-                    <span style={{
-                      padding: '8px 16px',
-                      backgroundColor: 
-                        r.priority === 'urgent' ? '#fee2e2' : 
-                        r.priority === 'high' ? '#fed7aa' :
-                        r.priority === 'medium' ?  '#fef3c7' :  '#d1fae5',
-                      color: 
-                        r.priority === 'urgent' ? '#991b1b' :
-                        r.priority === 'high' ? '#9a3412' :
-                        r.priority === 'medium' ? '#92400e' : '#065f46',
-                      borderRadius: '999px',
-                      fontSize: '14px',
-                      fontWeight: 600,
-                    }}>
-                      {r.priority === 'urgent' && '🔴 Acil'}
-                      {r.priority === 'high' && '🟠 Yüksek'}
-                      {r.priority === 'medium' && '🟡 Orta'}
-                      {r.priority === 'low' && '🟢 Düşük'}
-                    </span>
-                  </div>
+                  <p className="text-sm text-slate-500 mt-1 line-clamp-2">{r.description}</p>
+                  {r.address && (
+                    <div className="flex items-center gap-1 mt-2 text-xs text-slate-400">
+                      <MapPin className="w-3 h-3" /> {r.address}
+                    </div>
+                  )}
                 </div>
-                <p style={{ color: '#4b5563', marginBottom: '12px', fontSize: '16px' }}>
-                  {r.description}
-                </p>
-                <p style={{ color: '#6b7280', fontSize: '14px', marginBottom:  '12px' }}>
-                  📍 {r.address || 'Adres yok'}
-                </p>
-                <div style={{
-                  display: 'flex',
-                  justifyContent:  'space-between',
-                  borderTop: '1px solid #e5e7eb',
-                  paddingTop: '12px',
-                  fontSize: '14px',
-                  color: '#9ca3af'
-                }}>
-                  <span>👍 {r.upvotes} | 👎 {r.downvotes}</span>
-                  <span>{r.category}</span>
+                <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                  <span className={`badge badge-${r.status}`}>{STATUS_LABELS[r.status] ?? r.status}</span>
+                  <span className={`badge badge-${r.priority}`}>{PRIORITY_LABELS[r.priority] ?? r.priority}</span>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
+              <div className="flex items-center justify-between mt-4 pt-3 border-t border-slate-50">
+                <span className="text-xs text-slate-400 capitalize">{CATEGORY_LABELS[r.category] ?? r.category}</span>
+                <div className="flex items-center gap-3 text-xs text-slate-400">
+                  <span className="flex items-center gap-1"><ThumbsUp className="w-3 h-3" />{r.upvotes}</span>
+                  <span className="flex items-center gap-1"><ThumbsDown className="w-3 h-3" />{r.downvotes}</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

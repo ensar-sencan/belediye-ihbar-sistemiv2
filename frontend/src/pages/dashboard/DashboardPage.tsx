@@ -1,23 +1,22 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import axiosInstance from '../../lib/axios';
 import { useAuthStore } from '../../store/authStore';
+import {
+  ClipboardList, Clock, Loader, CheckCircle, XCircle,
+  TrendingUp, PlusCircle, ArrowRight, BarChart3,
+} from 'lucide-react';
 
 export default function DashboardPage() {
-  const user = useAuthStore((state) => state.user);
+  const user = useAuthStore((s) => s.user);
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (user?.role === 'ADMIN') {
       axiosInstance.get('/admin/dashboard/stats')
-        .then(res => {
-          setStats(res.data);
-          setLoading(false);
-        })
-        .catch(err => {
-          console.error(err);
-          setLoading(false);
-        });
+        .then(r => { setStats(r.data); setLoading(false); })
+        .catch(() => setLoading(false));
     } else {
       setLoading(false);
     }
@@ -25,126 +24,90 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: '80vh',
-        fontSize: '32px'
-      }}>
-        Yukleniyor...
+      <div className="flex items-center justify-center h-64">
+        <Loader className="w-8 h-8 text-indigo-600 animate-spin" />
       </div>
     );
   }
 
+  const statCards = [
+    { label: 'Toplam İhbar', value: stats?.total_reports ?? 0, icon: ClipboardList, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+    { label: 'Bekleyen', value: stats?.status_distribution?.pending ?? 0, icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50' },
+    { label: 'İşlemde', value: stats?.status_distribution?.in_progress ?? 0, icon: Loader, color: 'text-blue-600', bg: 'bg-blue-50' },
+    { label: 'Çözüldü', value: stats?.status_distribution?.resolved ?? 0, icon: CheckCircle, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    { label: 'Reddedildi', value: stats?.status_distribution?.rejected ?? 0, icon: XCircle, color: 'text-red-600', bg: 'bg-red-50' },
+    { label: 'Son 7 Gün', value: stats?.recent_reports_7days ?? 0, icon: TrendingUp, color: 'text-violet-600', bg: 'bg-violet-50' },
+  ];
+
   return (
-    <div style={{ padding: '32px', maxWidth: '1400px', margin: '0 auto' }}>  {/* ← backgroundColor SİLİNDİ */}
-      <h1 style={{ fontSize: '36px', fontWeight: 'bold', marginBottom: '32px' }}>
-        Hos Geldiniz, {user?.role === 'ADMIN' ? 'Sistem Yoneticisi' : 'Kullanici'}!  👋
-      </h1>
-
-      {user?.role === 'ADMIN' && stats ?  (
+    <div>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-8">
         <div>
-          <h2 style={{ fontSize: '28px', fontWeight: '600', marginBottom: '24px' }}>
-            Sistem İstatistikleri
-          </h2>
-
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
-            gap: '20px',
-            marginBottom: '32px'
-          }}>
-            <div style={{
-              backgroundColor: 'white',
-              padding: '24px',
-              borderRadius: '12px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-              border: '2px solid #3b82f6'
-            }}>
-              <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '8px' }}>Toplam İhbar</p>
-              <p style={{ fontSize: '36px', fontWeight: 'bold', color: '#2563eb' }}>{stats.total_reports}</p>
-            </div>
-
-            <div style={{
-              backgroundColor: 'white',
-              padding: '24px',
-              borderRadius: '12px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-              border: '2px solid #10b981'
-            }}>
-              <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '8px' }}>Bekleyen</p>
-              <p style={{ fontSize: '36px', fontWeight: 'bold', color: '#059669' }}>
-                {stats.status_distribution?. pending || 0}
-              </p>
-            </div>
-
-            <div style={{
-              backgroundColor: 'white',
-              padding: '24px',
-              borderRadius: '12px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-              border: '2px solid #f59e0b'
-            }}>
-              <p style={{ fontSize: '14px', color: '#6b7280', marginBottom:  '8px' }}>İşlemde</p>
-              <p style={{ fontSize: '36px', fontWeight: 'bold', color:  '#d97706' }}>
-                {stats.status_distribution?.in_progress || 0}
-              </p>
-            </div>
-
-            <div style={{
-              backgroundColor: 'white',
-              padding: '24px',
-              borderRadius: '12px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-              border: '2px solid #22c55e'
-            }}>
-              <p style={{ fontSize:  '14px', color: '#6b7280', marginBottom: '8px' }}>Çözüldü</p>
-              <p style={{ fontSize: '36px', fontWeight: 'bold', color: '#16a34a' }}>
-                {stats.status_distribution?.resolved || 0}
-              </p>
-            </div>
-          </div>
-
-          <div style={{
-            backgroundColor: 'white',
-            padding: '24px',
-            borderRadius: '12px',
-            boxShadow:  '0 2px 8px rgba(0,0,0,0.1)',
-            marginBottom: '24px'
-          }}>
-            <h3 style={{ fontSize:  '20px', fontWeight: '600', marginBottom: '16px' }}>Son İhbarlar</h3>
-            <p style={{ color: '#6b7280' }}>
-              Son 7 günde bildirilen:  {stats.recent_reports_7days} ihbar
-            </p>
-          </div>
-
-          <div style={{
-            backgroundColor: 'white',
-            padding: '24px',
-            borderRadius: '12px',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-          }}>
-            <h3 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '16px' }}>Henüz ihbar yok</h3>
-            <p style={{ color: '#6b7280' }}>
-              İlk ihbarı oluşturmak için "Yeni İhbar" butonuna tıklayın. 
-            </p>
-          </div>
+          <h1 className="text-2xl font-bold text-slate-900">
+            Hoş Geldiniz, {user?.full_name?.split(' ')[0]} 👋
+          </h1>
+          <p className="text-slate-500 mt-1 text-sm">
+            {user?.role === 'ADMIN' ? 'Sistem durumuna genel bakış' : 'Belediye İhbar Sistemi\'ne hoş geldiniz'}
+          </p>
         </div>
+        <Link to="/reports/create" className="btn-primary">
+          <PlusCircle className="w-4 h-4" /> Yeni İhbar
+        </Link>
+      </div>
+
+      {user?.role === 'ADMIN' && stats ? (
+        <>
+          {/* Stat Cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+            {statCards.map(({ label, value, icon: Icon, color, bg }) => (
+              <div key={label} className="card">
+                <div className={`inline-flex p-2 rounded-xl ${bg} mb-3`}>
+                  <Icon className={`w-5 h-5 ${color}`} />
+                </div>
+                <p className="text-2xl font-bold text-slate-900">{value}</p>
+                <p className="text-xs text-slate-500 mt-1">{label}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Quick Links */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Link to="/reports" className="card flex items-center justify-between group hover:border-indigo-200 hover:shadow-md transition-all duration-200 border border-slate-100">
+              <div>
+                <p className="font-semibold text-slate-900">Tüm İhbarlar</p>
+                <p className="text-sm text-slate-500 mt-0.5">Listeyi görüntüle ve filtrele</p>
+              </div>
+              <ArrowRight className="w-5 h-5 text-slate-300 group-hover:text-indigo-600 group-hover:translate-x-1 transition-all" />
+            </Link>
+            <Link to="/admin/reports" className="card flex items-center justify-between group hover:border-indigo-200 hover:shadow-md transition-all duration-200 border border-slate-100">
+              <div>
+                <p className="font-semibold text-slate-900">İhbar Yönetimi</p>
+                <p className="text-sm text-slate-500 mt-0.5">Durum ve öncelik güncelle</p>
+              </div>
+              <ArrowRight className="w-5 h-5 text-slate-300 group-hover:text-indigo-600 group-hover:translate-x-1 transition-all" />
+            </Link>
+          </div>
+        </>
       ) : (
-        <div style={{
-          backgroundColor: 'white',
-          padding: '48px',
-          borderRadius: '12px',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-          textAlign: 'center'
-        }}>
-          <p style={{ fontSize: '24px', color: '#4b5563', marginBottom: '16px' }}>
-            Belediye İhbar Sistemine Hoş Geldiniz! 
-          </p>
-          <p style={{ fontSize: '18px', color: '#6b7280' }}>
-            Yeni ihbar oluşturmak için menüden "Yeni İhbar" seçeneğini kullanabilirsiniz.
-          </p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {[
+            { title: 'İhbar Oluştur', desc: 'Yaşadığınız sorunu bildirin', icon: PlusCircle, to: '/reports/create', color: 'bg-indigo-600' },
+            { title: 'İhbarları Gör', desc: 'Tüm bildirimleri inceleyin', icon: ClipboardList, to: '/reports', color: 'bg-emerald-600' },
+            { title: 'İstatistikler', desc: 'Profil ve ihbar istatistikleri', icon: BarChart3, to: '/profile', color: 'bg-violet-600' },
+          ].map(({ title, desc, icon: Icon, to, color }) => (
+            <Link key={to} to={to}
+              className="card flex flex-col items-start gap-3 hover:shadow-md hover:border-slate-200 border border-slate-100 transition-all duration-200 group">
+              <div className={`w-10 h-10 ${color} rounded-xl flex items-center justify-center`}>
+                <Icon className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <p className="font-semibold text-slate-900">{title}</p>
+                <p className="text-sm text-slate-500 mt-0.5">{desc}</p>
+              </div>
+              <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-indigo-600 group-hover:translate-x-1 transition-all mt-auto" />
+            </Link>
+          ))}
         </div>
       )}
     </div>

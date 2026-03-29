@@ -1,284 +1,174 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../lib/axios';
+import { Upload, X, Loader2, MapPin, ArrowLeft, CheckCircle } from 'lucide-react';
+
+const CATEGORIES = [
+  { value: 'pothole', label: 'Çukur' },
+  { value: 'lighting', label: 'Aydınlatma' },
+  { value: 'cleaning', label: 'Temizlik' },
+  { value: 'park', label: 'Park / Bahçe' },
+  { value: 'water', label: 'Su / Kanalizasyon' },
+  { value: 'road', label: 'Yol' },
+  { value: 'other', label: 'Diğer' },
+];
+const PRIORITIES = [
+  { value: 'low', label: 'Düşük', color: 'text-emerald-600' },
+  { value: 'medium', label: 'Orta', color: 'text-amber-600' },
+  { value: 'high', label: 'Yüksek', color: 'text-orange-600' },
+  { value: 'urgent', label: 'Acil', color: 'text-red-600' },
+];
 
 export default function CreateReportPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [images, setImages] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
-  
   const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    category: 'pothole',
-    priority: 'medium',
-    address: '',
-    latitude: 40.9889,
-    longitude: 29.0277,
-    is_anonymous: false
+    title: '', description: '', category: 'pothole', priority: 'medium',
+    address: '', latitude: 40.9889, longitude: 29.0277, is_anonymous: false,
   });
 
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
+  const handleImages = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []).slice(0, 5);
     setImages(files);
-    
-    // Create previews
-    const newPreviews = files.map(file => URL.createObjectURL(file));
-    setPreviews(newPreviews);
+    setPreviews(files.map(f => URL.createObjectURL(f)));
   };
 
-  const handleSubmit = async (e:  React.FormEvent) => {
+  const removeImage = (i: number) => {
+    setImages(prev => prev.filter((_, idx) => idx !== i));
+    setPreviews(prev => prev.filter((_, idx) => idx !== i));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
     try {
-      // 1) Create report
-      console.log('Creating report...');
-      const reportRes = await axiosInstance.post('/reports/', formData);
-      console.log('Report created:', reportRes.data);
-      
-      const reportId = reportRes.data. id;
-
-      // 2) Upload images if any
+      const res = await axiosInstance.post('/reports/', formData);
       if (images.length > 0) {
-        console.log('Uploading images.. .');
-        const formDataImages = new FormData();
-        images.forEach(image => {
-          formDataImages. append('files', image);
+        const fd = new FormData();
+        images.forEach(img => fd.append('files', img));
+        await axiosInstance.post(`/reports/${res.data.id}/upload-images`, fd, {
+          headers: { 'Content-Type': 'multipart/form-data' },
         });
-
-        await axiosInstance.post(`/reports/${reportId}/upload-images`, formDataImages, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
-        console.log('Images uploaded! ');
       }
-
-      alert('İhbar başarıyla oluşturuldu! ');
       navigate('/reports');
-    } catch (err:  any) {
-      console.error('Error:', err);
-      alert('Hata:  ' + (err.response?.data?.detail || err.message));
+    } catch (err: any) {
+      alert('Hata: ' + (err.response?.data?.detail || err.message));
     } finally {
       setLoading(false);
     }
   };
 
+  const set = (field: string, value: any) => setFormData(p => ({ ...p, [field]: value }));
+
   return (
-    <div style={{ minHeight: '100vh', backgroundColor:  '#f3f4f6', padding: '40px 20px' }}>
-      <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-        <h1 style={{ fontSize: '36px', fontWeight: 'bold', marginBottom: '30px' }}>
-          ➕ Yeni İhbar Oluştur
-        </h1>
-
-        <form onSubmit={handleSubmit} style={{
-          backgroundColor: 'white',
-          borderRadius: '12px',
-          padding: '40px',
-          boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
-        }}>
-          {/* TITLE */}
-          <div style={{ marginBottom: '24px' }}>
-            <label style={{ display: 'block', fontSize: '16px', fontWeight:  '600', marginBottom: '8px' }}>
-              Başlık *
-            </label>
-            <input
-              type="text"
-              required
-              value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e. target.value })}
-              style={{
-                width: '100%',
-                padding: '12px',
-                fontSize: '16px',
-                border: '2px solid #e5e7eb',
-                borderRadius: '8px'
-              }}
-            />
-          </div>
-
-          {/* DESCRIPTION */}
-          <div style={{ marginBottom: '24px' }}>
-            <label style={{ display: 'block', fontSize:  '16px', fontWeight: '600', marginBottom: '8px' }}>
-              Açıklama *
-            </label>
-            <textarea
-              required
-              rows={4}
-              value={formData.description}
-              onChange={(e) => setFormData({ ... formData, description: e.target.value })}
-              style={{
-                width: '100%',
-                padding: '12px',
-                fontSize: '16px',
-                border: '2px solid #e5e7eb',
-                borderRadius: '8px'
-              }}
-            />
-          </div>
-
-          {/* CATEGORY + PRIORITY */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap:  '16px', marginBottom: '24px' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '16px', fontWeight: '600', marginBottom: '8px' }}>
-                Kategori *
-              </label>
-              <select
-                value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                style={{
-                  width: '100%',
-                  padding:  '12px',
-                  fontSize: '16px',
-                  border: '2px solid #e5e7eb',
-                  borderRadius: '8px'
-                }}
-              >
-                <option value="pothole">🕳️ Çukur</option>
-                <option value="lighting">💡 Aydınlatma</option>
-                <option value="cleaning">🧹 Temizlik</option>
-                <option value="park">🌳 Park/Bahçe</option>
-                <option value="water">💧 Su/Kanalizasyon</option>
-                <option value="road">🛣️ Yol</option>
-                <option value="other">📦 Diğer</option>
-              </select>
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontSize: '16px', fontWeight: '600', marginBottom: '8px' }}>
-                Öncelik
-              </label>
-              <select
-                value={formData.priority}
-                onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  fontSize: '16px',
-                  border: '2px solid #e5e7eb',
-                  borderRadius: '8px'
-                }}
-              >
-                <option value="low">🟢 Düşük</option>
-                <option value="medium">🟡 Orta</option>
-                <option value="high">🟠 Yüksek</option>
-                <option value="urgent">🔴 Acil</option>
-              </select>
-            </div>
-          </div>
-
-          {/* ADDRESS */}
-          <div style={{ marginBottom:  '24px' }}>
-            <label style={{ display: 'block', fontSize: '16px', fontWeight: '600', marginBottom: '8px' }}>
-              Adres
-            </label>
-            <input
-              type="text"
-              value={formData.address}
-              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-              style={{
-                width: '100%',
-                padding: '12px',
-                fontSize: '16px',
-                border: '2px solid #e5e7eb',
-                borderRadius: '8px'
-              }}
-            />
-          </div>
-
-          {/* IMAGES */}
-          <div style={{ marginBottom: '24px' }}>
-            <label style={{ display: 'block', fontSize: '16px', fontWeight: '600', marginBottom: '8px' }}>
-              📸 Fotoğraflar (En fazla 5)
-            </label>
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              max={5}
-              onChange={handleImageSelect}
-              style={{
-                width: '100%',
-                padding: '12px',
-                fontSize: '16px',
-                border: '2px solid #e5e7eb',
-                borderRadius: '8px'
-              }}
-            />
-            
-            {/* IMAGE PREVIEWS */}
-            {previews.length > 0 && (
-              <div style={{ display: 'flex', gap: '12px', marginTop: '16px', flexWrap: 'wrap' }}>
-                {previews. map((preview, i) => (
-                  <img
-                    key={i}
-                    src={preview}
-                    alt={`Preview ${i + 1}`}
-                    style={{
-                      width: '120px',
-                      height: '120px',
-                      objectFit: 'cover',
-                      borderRadius: '8px',
-                      border: '2px solid #e5e7eb'
-                    }}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* ANONYMOUS */}
-          <div style={{ marginBottom: '32px' }}>
-            <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-              <input
-                type="checkbox"
-                checked={formData. is_anonymous}
-                onChange={(e) => setFormData({ ... formData, is_anonymous: e.target.checked })}
-                style={{ width: '20px', height: '20px', marginRight:  '12px', cursor: 'pointer' }}
-              />
-              <span style={{ fontSize: '16px' }}>Anonim olarak gönder</span>
-            </label>
-          </div>
-
-          {/* BUTTONS */}
-          <div style={{ display: 'flex', gap:  '16px' }}>
-            <button
-              type="submit"
-              disabled={loading}
-              style={{
-                flex: 1,
-                padding: '14px',
-                fontSize: '18px',
-                fontWeight: '600',
-                backgroundColor: loading ? '#9ca3af' : '#2563eb',
-                color: 'white',
-                border: 'none',
-                borderRadius:  '8px',
-                cursor:  loading ? 'not-allowed' : 'pointer'
-              }}
-            >
-              {loading ?  'Oluşturuluyor...' : '✅ İhbar Oluştur'}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => navigate('/reports')}
-              style={{
-                padding: '14px 24px',
-                fontSize: '18px',
-                fontWeight: '600',
-                backgroundColor: 'white',
-                color: '#374151',
-                border: '2px solid #e5e7eb',
-                borderRadius: '8px',
-                cursor: 'pointer'
-              }}
-            >
-              İptal
-            </button>
-          </div>
-        </form>
+    <div>
+      <div className="flex items-center gap-3 mb-6">
+        <button onClick={() => navigate('/reports')} className="btn-secondary">
+          <ArrowLeft className="w-4 h-4" />
+        </button>
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Yeni İhbar Oluştur</h1>
+          <p className="text-slate-500 text-sm mt-0.5">Yaşadığınız sorunu detaylıca açıklayın</p>
+        </div>
       </div>
+
+      <form onSubmit={handleSubmit} className="max-w-2xl space-y-5">
+        {/* Title */}
+        <div className="card">
+          <h2 className="text-sm font-semibold text-slate-700 mb-4">Temel Bilgiler</h2>
+          <div className="space-y-4">
+            <div>
+              <label className="label">Başlık *</label>
+              <input type="text" required value={formData.title} placeholder="Kısa ve açıklayıcı bir başlık girin"
+                onChange={(e) => set('title', e.target.value)} className="input" />
+            </div>
+            <div>
+              <label className="label">Açıklama *</label>
+              <textarea required rows={4} value={formData.description} placeholder="Sorunu detaylıca açıklayın..."
+                onChange={(e) => set('description', e.target.value)}
+                className="input resize-none" />
+            </div>
+          </div>
+        </div>
+
+        {/* Category & Priority */}
+        <div className="card">
+          <h2 className="text-sm font-semibold text-slate-700 mb-4">Kategori ve Öncelik</h2>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="label">Kategori *</label>
+              <select value={formData.category} onChange={(e) => set('category', e.target.value)} className="input">
+                {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="label">Öncelik</label>
+              <select value={formData.priority} onChange={(e) => set('priority', e.target.value)} className="input">
+                {PRIORITIES.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Address */}
+        <div className="card">
+          <h2 className="text-sm font-semibold text-slate-700 mb-4">Konum</h2>
+          <div className="relative">
+            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input type="text" value={formData.address} placeholder="Sokak, mahalle, ilçe..."
+              onChange={(e) => set('address', e.target.value)} className="input pl-9" />
+          </div>
+        </div>
+
+        {/* Images */}
+        <div className="card">
+          <h2 className="text-sm font-semibold text-slate-700 mb-4">Fotoğraflar (en fazla 5)</h2>
+          <label className="flex flex-col items-center justify-center gap-2 p-6 border-2 border-dashed border-slate-200 rounded-xl cursor-pointer hover:border-indigo-300 hover:bg-indigo-50 transition-all">
+            <Upload className="w-8 h-8 text-slate-300" />
+            <span className="text-sm text-slate-500">Fotoğraf seçmek için tıklayın</span>
+            <input type="file" accept="image/*" multiple className="hidden" onChange={handleImages} />
+          </label>
+          {previews.length > 0 && (
+            <div className="grid grid-cols-4 gap-2 mt-3">
+              {previews.map((src, i) => (
+                <div key={i} className="relative group">
+                  <img src={src} alt="" className="w-full h-20 object-cover rounded-lg border border-slate-200" />
+                  <button type="button" onClick={() => removeImage(i)}
+                    className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Anonymous */}
+        <div className="card">
+          <label className="flex items-center gap-3 cursor-pointer">
+            <div onClick={() => set('is_anonymous', !formData.is_anonymous)}
+              className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${formData.is_anonymous ? 'bg-indigo-600 border-indigo-600' : 'border-slate-300'}`}>
+              {formData.is_anonymous && <CheckCircle className="w-3 h-3 text-white" />}
+            </div>
+            <div>
+              <p className="text-sm font-medium text-slate-700">Anonim olarak gönder</p>
+              <p className="text-xs text-slate-400">Adınız ihbarda görünmez</p>
+            </div>
+          </label>
+        </div>
+
+        {/* Buttons */}
+        <div className="flex gap-3">
+          <button type="submit" disabled={loading} className="btn-primary flex-1 justify-center py-3">
+            {loading ? <><Loader2 className="w-4 h-4 animate-spin" />Oluşturuluyor...</> : 'İhbarı Oluştur'}
+          </button>
+          <button type="button" onClick={() => navigate('/reports')} className="btn-secondary px-6">
+            İptal
+          </button>
+        </div>
+      </form>
     </div>
   );
 }
