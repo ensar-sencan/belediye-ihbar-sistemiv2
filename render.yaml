@@ -19,7 +19,7 @@ services:
       - key: DATABASE_ECHO
         value: false
       - key: CORS_ORIGINS_STR
-        value: https://belediye-ihbar-sistemi.vercel.app
+        value: https://belediye-ihbar-sistemiv2-dmqahby5o-ensar-sencans-projects.vercel.app,https://belediye-ihbar-sistemiv2.vercel.app
 
 databases:
   - name: belediye-ihbar-db
