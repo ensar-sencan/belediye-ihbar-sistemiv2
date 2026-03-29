@@ -130,6 +130,16 @@ async def root():
         "health": "/health"
     }
 
+@app.get("/seed-db-x7k2m")
+async def seed_database():
+    """One-time seed endpoint - remove after use"""
+    try:
+        from seed_data import seed_database as run_seed
+        run_seed()
+        return {"status": "success", "message": "Database seeded successfully"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
 @app.get("/health")
 async def health_check():
     return {
