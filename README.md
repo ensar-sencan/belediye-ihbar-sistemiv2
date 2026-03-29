@@ -2,10 +2,26 @@
 
 Vatandaşların belediyelerine çukur, yol bozukluğu, aydınlatma arızası gibi sorunları kolayca bildirebileceği modern bir web platformu.
 
-![Status](https://img.shields.io/badge/status-in%20development-yellow)
+![Status](https://img.shields.io/badge/status-live-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 ![Python](https://img.shields.io/badge/python-3.11+-blue)
 ![React](https://img.shields.io/badge/react-18+-blue)
+
+## 🌐 Canlı Demo
+
+| Servis | URL |
+|--------|-----|
+| 🖥️ Frontend | https://belediye-ihbar-sistemiv2.vercel.app |
+| ⚙️ Backend API | https://belediye-ihbar-api.onrender.com |
+| 📖 API Docs | https://belediye-ihbar-api.onrender.com/docs |
+
+### Test Kullanıcıları
+
+| E-posta | Şifre | Rol |
+|---------|-------|-----|
+| admin@test.com | test123 | Süper Admin |
+| belediye@test.com | test123 | Belediye Yöneticisi |
+| ahmet@test.com | test123 | Normal Kullanıcı |
 
 ## 🎯 Proje Hakkında
 
@@ -136,14 +152,15 @@ belediye-ihbar-sistemi/
 
 ## 🗺️ Roadmap
 
-### Faz 1: MVP (4-6 hafta)
+### Faz 1: MVP ✅
 - [x] Proje kurulumu ve planlama
-- [ ] Authentication sistemi (Firebase)
-- [ ] Veritabanı şeması ve modeller
-- [ ] İhbar oluşturma API
-- [ ] Harita entegrasyonu
-- [ ] Temel frontend UI
-- [ ] Admin paneli (basit)
+- [x] Authentication sistemi (JWT)
+- [x] Veritabanı şeması ve modeller
+- [x] İhbar oluşturma API
+- [x] Temel frontend UI (React + Tailwind CSS)
+- [x] Admin paneli
+- [x] Docker desteği
+- [x] Canlıya alma (Render + Vercel)
 
 ### Faz 2: İyileştirmeler (4 hafta)
 - [ ] Topluluk doğrulama sistemi
