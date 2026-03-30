@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import axiosInstance from '../lib/axios';
 import { useAuthStore } from '../store/authStore';
 import {
   ArrowLeft, MapPin, Calendar, ThumbsUp, ThumbsDown,
-  MessageSquare, Trash2, Send, Loader, User,
+  MessageSquare, Trash2, Send, Loader, User, AlertTriangle,
 } from 'lucide-react';
 
 type Comment = {
@@ -38,7 +39,9 @@ export default function ReportDetailPage() {
   const [newComment, setNewComment] = useState('');
   const [loading, setLoading] = useState(true);
   const [voting, setVoting] = useState(false);
+  const [myVote, setMyVote] = useState<'upvote' | 'downvote' | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   useEffect(() => { loadReport(); loadComments(); }, [id]);
 
@@ -52,13 +55,20 @@ export default function ReportDetailPage() {
       .then(r => setComments(r.data))
       .catch(() => {});
 
-  const handleVote = async (type: string) => {
+  const handleVote = async (type: 'upvote' | 'downvote') => {
+    if (voting) return;
+    if (myVote === type) {
+      toast('Zaten bu seçeneği seçtiniz.', { icon: 'ℹ️' });
+      return;
+    }
     setVoting(true);
     try {
       const r = await axiosInstance.post(`/reports/${id}/vote?vote_type=${type}`);
       setReport(r.data);
+      setMyVote(type);
+      toast.success(type === 'upvote' ? 'Beğendiniz!' : 'Beğenmediniz.');
     } catch (err: any) {
-      alert(err.response?.data?.detail || 'Oy verilemedi.');
+      toast.error(err.response?.data?.detail || 'Oy verilemedi.');
     } finally { setVoting(false); }
   };
 
@@ -69,18 +79,24 @@ export default function ReportDetailPage() {
       await axiosInstance.post(`/reports/${id}/comments`, { content: newComment });
       setNewComment('');
       loadComments();
+      toast.success('Yorumunuz eklendi.');
     } catch (err: any) {
-      alert(err.response?.data?.detail || 'Yorum eklenemedi.');
+      toast.error(err.response?.data?.detail || 'Yorum eklenemedi.');
     } finally { setSubmitting(false); }
   };
 
   const handleDeleteComment = async (commentId: string) => {
-    if (!confirm('Bu yorumu silmek istediğinizden emin misiniz?')) return;
+    if (confirmDelete !== commentId) {
+      setConfirmDelete(commentId);
+      return;
+    }
     try {
       await axiosInstance.delete(`/comments/${commentId}`);
+      setConfirmDelete(null);
       loadComments();
+      toast.success('Yorum silindi.');
     } catch (err: any) {
-      alert(err.response?.data?.detail || 'Silinemedi.');
+      toast.error(err.response?.data?.detail || 'Silinemedi.');
     }
   };
 
@@ -145,15 +161,34 @@ export default function ReportDetailPage() {
         <div className="pt-4 border-t border-slate-100">
           <p className="text-sm font-medium text-slate-700 mb-3">Bu ihbar hakkında ne düşünüyorsunuz?</p>
           <div className="flex gap-3">
-            <button onClick={() => handleVote('upvote')} disabled={voting}
-              className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl text-sm font-medium hover:bg-emerald-100 transition-all disabled:opacity-50">
+            <button
+              onClick={() => handleVote('upvote')}
+              disabled={voting}
+              className={`flex items-center gap-2 px-4 py-2 border rounded-xl text-sm font-medium transition-all disabled:opacity-50 ${
+                myVote === 'upvote'
+                  ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                  : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+              }`}
+            >
               <ThumbsUp className="w-4 h-4" /> Beğendim ({report.upvotes})
             </button>
-            <button onClick={() => handleVote('downvote')} disabled={voting}
-              className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 border border-red-200 rounded-xl text-sm font-medium hover:bg-red-100 transition-all disabled:opacity-50">
+            <button
+              onClick={() => handleVote('downvote')}
+              disabled={voting}
+              className={`flex items-center gap-2 px-4 py-2 border rounded-xl text-sm font-medium transition-all disabled:opacity-50 ${
+                myVote === 'downvote'
+                  ? 'bg-red-600 text-white border-red-600 shadow-sm'
+                  : 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100'
+              }`}
+            >
               <ThumbsDown className="w-4 h-4" /> Beğenmedim ({report.downvotes})
             </button>
           </div>
+          {myVote && (
+            <p className="text-xs text-slate-400 mt-2">
+              {myVote === 'upvote' ? '✓ Beğendiniz' : '✓ Beğenmediniz'} — oyunuz kaydedildi
+            </p>
+          )}
         </div>
       </div>
 
@@ -196,10 +231,31 @@ export default function ReportDetailPage() {
                       </span>
                     </div>
                     {(user?.id === c.user_id || user?.role === 'ADMIN') && (
-                      <button onClick={() => handleDeleteComment(c.id)}
-                        className="text-slate-300 hover:text-red-500 transition-colors">
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      <div className="flex items-center gap-1">
+                        {confirmDelete === c.id ? (
+                          <>
+                            <button
+                              onClick={() => handleDeleteComment(c.id)}
+                              className="flex items-center gap-1 text-xs text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-lg hover:bg-red-100 transition-colors"
+                            >
+                              <AlertTriangle className="w-3 h-3" /> Evet, sil
+                            </button>
+                            <button
+                              onClick={() => setConfirmDelete(null)}
+                              className="text-xs text-slate-500 px-2 py-0.5 rounded-lg hover:bg-slate-100 transition-colors"
+                            >
+                              İptal
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            onClick={() => handleDeleteComment(c.id)}
+                            className="text-slate-300 hover:text-red-500 transition-colors"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
                     )}
                   </div>
                   <p className="text-sm text-slate-600 mt-1">{c.content}</p>

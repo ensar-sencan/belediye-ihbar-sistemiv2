@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import axiosInstance from '../lib/axios';
 import { Upload, X, Loader2, MapPin, ArrowLeft, CheckCircle } from 'lucide-react';
 
@@ -24,10 +25,16 @@ export default function CreateReportPage() {
   const [loading, setLoading] = useState(false);
   const [images, setImages] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
+  const [municipalities, setMunicipalities] = useState<{ id: string; name: string }[]>([]);
   const [formData, setFormData] = useState({
     title: '', description: '', category: 'pothole', priority: 'medium',
     address: '', latitude: 40.9889, longitude: 29.0277, is_anonymous: false,
+    municipality_id: '',
   });
+
+  useEffect(() => {
+    axiosInstance.get('/municipalities/').then(r => setMunicipalities(r.data || [])).catch(() => {});
+  }, []);
 
   const handleImages = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []).slice(0, 5);
@@ -44,7 +51,8 @@ export default function CreateReportPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await axiosInstance.post('/reports/', formData);
+      const payload = { ...formData, municipality_id: formData.municipality_id || undefined };
+      const res = await axiosInstance.post('/reports/', payload);
       if (images.length > 0) {
         const fd = new FormData();
         images.forEach(img => fd.append('files', img));
@@ -52,13 +60,14 @@ export default function CreateReportPage() {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
       }
+      toast.success('İhbar başarıyla oluşturuldu!');
       navigate('/reports');
     } catch (err: any) {
       const detail = err.response?.data?.detail;
       const msg = Array.isArray(detail)
         ? detail.map((e: any) => `${e.loc?.slice(-1)[0]}: ${e.msg}`).join('\n')
         : (typeof detail === 'string' ? detail : err.message);
-      alert('Hata: ' + msg);
+      toast.error('Hata: ' + msg);
     } finally {
       setLoading(false);
     }
@@ -116,13 +125,24 @@ export default function CreateReportPage() {
           </div>
         </div>
 
-        {/* Address */}
+        {/* Address + Municipality */}
         <div className="card">
           <h2 className="text-sm font-semibold text-slate-700 mb-4">Konum</h2>
-          <div className="relative">
-            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input type="text" value={formData.address} placeholder="Sokak, mahalle, ilçe..."
-              onChange={(e) => set('address', e.target.value)} className="input pl-9" />
+          <div className="space-y-3">
+            <div className="relative">
+              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input type="text" value={formData.address} placeholder="Sokak, mahalle, ilçe..."
+                onChange={(e) => set('address', e.target.value)} className="input pl-9" />
+            </div>
+            {municipalities.length > 0 && (
+              <div>
+                <label className="label">Belediye</label>
+                <select value={formData.municipality_id} onChange={(e) => set('municipality_id', e.target.value)} className="input">
+                  <option value="">Otomatik seç</option>
+                  {municipalities.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                </select>
+              </div>
+            )}
           </div>
         </div>
 

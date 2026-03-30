@@ -5,7 +5,7 @@ export default function AdminPage() {
   const items = [
     { icon: ClipboardList, title: 'İhbar Yönetimi', desc: 'Tüm ihbarları görüntüle, durum ve öncelik güncelle', to: '/admin/reports', color: 'bg-indigo-600' },
     { icon: BarChart3, title: 'Dashboard', desc: 'Sistem istatistikleri ve özet bilgiler', to: '/dashboard', color: 'bg-emerald-600' },
-    { icon: Users, title: 'Kullanıcılar', desc: 'Kullanıcı yönetimi (yakında)', to: '#', color: 'bg-violet-600' },
+    { icon: Users, title: 'Kullanıcılar', desc: 'Tüm kullanıcıları görüntüle ve yönet', to: '/admin/users', color: 'bg-violet-600' },
     { icon: Settings, title: 'Ayarlar', desc: 'Sistem ayarları (yakında)', to: '#', color: 'bg-slate-600' },
   ];
 
