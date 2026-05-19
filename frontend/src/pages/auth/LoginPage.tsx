@@ -104,6 +104,15 @@ export default function LoginPage() {
               ))}
             </div>
           </div>
+
+          <div className="mt-6 text-center">
+            <p className="text-sm text-slate-500">
+              Hesabınız yok mu?{' '}
+              <a href="/register" className="text-indigo-600 hover:text-indigo-700 font-medium">
+                Kayıt olun
+              </a>
+            </p>
+          </div>
         </div>
       </div>
     </div>

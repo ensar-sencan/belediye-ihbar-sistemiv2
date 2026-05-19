@@ -28,6 +28,9 @@ class Settings(BaseSettings):
             return json.loads(raw)
         return [o.strip() for o in raw.split(",") if o.strip()]
 
+    # Firebase (optional)
+    FIREBASE_CREDENTIALS_PATH: str = ""
+
     # File Upload
     MAX_FILE_SIZE: int = 5242880
     ALLOWED_IMAGE_TYPES: List[str] = ["image/jpeg", "image/png", "image/webp"]
@@ -40,5 +43,6 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         case_sensitive = True
+        extra = "ignore"  # Ignore extra fields in .env
 
 settings = Settings()
