@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../lib/axios';
-import { Search, Filter, PlusCircle, MapPin, ThumbsUp, ThumbsDown, Loader, X } from 'lucide-react';
+import { Search, Filter, PlusCircle, MapPin, ThumbsUp, ThumbsDown, Loader, X, Map as MapIcon, List } from 'lucide-react';
+import ReportsMap from '../components/maps/ReportsMap';
 
 type Report = {
   id: string; title: string; description: string; category: string;
@@ -25,6 +26,7 @@ export default function ReportsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchInput, setSearchInput] = useState('');
+  const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
   const [filters, setFilters] = useState({ category: '', status: '', priority: '', search: '' });
 
   const loadReports = () => {
@@ -64,9 +66,25 @@ export default function ReportsPage() {
           <h1 className="text-2xl font-bold text-slate-900">İhbarlar</h1>
           <p className="text-slate-500 text-sm mt-0.5">{reports.length} ihbar listeleniyor</p>
         </div>
-        <button onClick={() => navigate('/reports/create')} className="btn-primary">
-          <PlusCircle className="w-4 h-4" /> Yeni İhbar
-        </button>
+        <div className="flex gap-2">
+          <div className="flex bg-slate-100 rounded-lg p-1">
+            <button
+              onClick={() => setViewMode('list')}
+              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${viewMode === 'list' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+            >
+              <List className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setViewMode('map')}
+              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${viewMode === 'map' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+            >
+              <MapIcon className="w-4 h-4" />
+            </button>
+          </div>
+          <button onClick={() => navigate('/reports/create')} className="btn-primary">
+            <PlusCircle className="w-4 h-4" /> Yeni İhbar
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -104,8 +122,15 @@ export default function ReportsPage() {
         </div>
       </div>
 
-      {/* List */}
-      {reports.length === 0 ? (
+      {/* Map View */}
+      {viewMode === 'map' && (
+        <div className="mb-6">
+          <ReportsMap reports={reports} height="600px" />
+        </div>
+      )}
+
+      {/* List View */}
+      {viewMode === 'list' && (reports.length === 0 ? (
         <div className="card text-center py-16">
           <p className="text-slate-400 text-lg">Hiç ihbar bulunamadı</p>
           {hasFilters && (
@@ -146,7 +171,7 @@ export default function ReportsPage() {
             </div>
           ))}
         </div>
-      )}
+      ))}
     </div>
   );
 }

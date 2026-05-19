@@ -7,6 +7,7 @@ import {
   ArrowLeft, MapPin, Calendar, ThumbsUp, ThumbsDown,
   MessageSquare, Trash2, Send, Loader, User, AlertTriangle,
 } from 'lucide-react';
+import MapView from '../components/maps/MapView';
 
 type Comment = {
   id: string; user_id: string; content: string; created_at: string;
@@ -143,6 +144,19 @@ export default function ReportDetailPage() {
         {report.address && (
           <div className="flex items-center gap-2 text-sm text-slate-500 mb-5">
             <MapPin className="w-4 h-4 text-slate-400" /> {report.address}
+          </div>
+        )}
+
+        {/* Map */}
+        {report.latitude && report.longitude && (
+          <div className="mb-5">
+            <MapView
+              latitude={report.latitude}
+              longitude={report.longitude}
+              title={report.title}
+              address={report.address}
+              height="300px"
+            />
           </div>
         )}
 

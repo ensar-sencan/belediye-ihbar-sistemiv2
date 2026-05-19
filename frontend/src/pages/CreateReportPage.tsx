@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import axiosInstance from '../lib/axios';
 import { Upload, X, Loader2, MapPin, ArrowLeft, CheckCircle } from 'lucide-react';
+import MapPicker from '../components/maps/MapPicker';
 
 const CATEGORIES = [
   { value: 'pothole', label: 'Çukur' },
@@ -143,6 +144,21 @@ export default function CreateReportPage() {
                 </select>
               </div>
             )}
+            <div>
+              <label className="label mb-2">Harita üzerinden konum seçin</label>
+              <MapPicker
+                latitude={formData.latitude}
+                longitude={formData.longitude}
+                onLocationChange={(lat, lng) => {
+                  set('latitude', lat);
+                  set('longitude', lng);
+                }}
+                height="350px"
+              />
+              <p className="text-xs text-slate-500 mt-2">
+                📍 Seçili konum: {formData.latitude.toFixed(6)}, {formData.longitude.toFixed(6)}
+              </p>
+            </div>
           </div>
         </div>
 
