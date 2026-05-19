@@ -27,6 +27,9 @@ export default function ReportsPage() {
   const [error, setError] = useState<string | null>(null);
   const [searchInput, setSearchInput] = useState('');
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const itemsPerPage = 12;
   const [filters, setFilters] = useState({ category: '', status: '', priority: '', search: '' });
 
   const loadReports = () => {
@@ -34,13 +37,20 @@ export default function ReportsPage() {
     setError(null);
     const params = new URLSearchParams();
     Object.entries(filters).forEach(([k, v]) => v && params.append(k, v));
-    const url = params.toString() ? `/reports/?${params}` : '/reports/';
+    params.append('skip', String((page - 1) * itemsPerPage));
+    params.append('limit', String(itemsPerPage));
+    const url = `/reports/?${params}`;
     axiosInstance.get(url)
-      .then(r => { setReports(Array.isArray(r.data) ? r.data : []); setLoading(false); })
+      .then(r => { 
+        const data = Array.isArray(r.data) ? r.data : [];
+        setReports(data);
+        setTotalPages(Math.ceil(data.length === itemsPerPage ? page + 1 : page));
+        setLoading(false);
+      })
       .catch(() => { setError('İhbarlar yüklenemedi. Sunucu başlıyor olabilir, lütfen tekrar deneyin.'); setLoading(false); });
   };
 
-  useEffect(() => { loadReports(); }, [filters]);
+  useEffect(() => { loadReports(); }, [filters, page]);
 
   const clearFilters = () => { setFilters({ category: '', status: '', priority: '', search: '' }); setSearchInput(''); };
   const hasFilters = Object.values(filters).some(Boolean);
@@ -172,6 +182,41 @@ export default function ReportsPage() {
           ))}
         </div>
       ))}
+
+      {/* Pagination */}
+      {viewMode === 'list' && reports.length > 0 && (
+        <div className="flex items-center justify-center gap-2 mt-8">
+          <button
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className="px-4 py-2 rounded-lg border border-slate-200 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            Önceki
+          </button>
+          <div className="flex items-center gap-1">
+            {[...Array(Math.min(5, totalPages))].map((_, i) => {
+              const pageNum = page <= 3 ? i + 1 : page - 2 + i;
+              if (pageNum > totalPages) return null;
+              return (
+                <button
+                  key={pageNum}
+                  onClick={() => setPage(pageNum)}
+                  className={`w-10 h-10 rounded-lg text-sm font-medium transition-colors ${page === pageNum ? 'bg-indigo-600 text-white' : 'text-slate-700 hover:bg-slate-100'}`}
+                >
+                  {pageNum}
+                </button>
+              );
+            })}
+          </div>
+          <button
+            onClick={() => setPage(p => p + 1)}
+            disabled={reports.length < itemsPerPage}
+            className="px-4 py-2 rounded-lg border border-slate-200 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            Sonraki
+          </button>
+        </div>
+      )}
     </div>
   );
 }
