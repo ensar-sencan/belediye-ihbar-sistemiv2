@@ -8,6 +8,7 @@ import {
   MessageSquare, Trash2, Send, Loader, User, AlertTriangle,
 } from 'lucide-react';
 import MapView from '../components/maps/MapView';
+import { getImageUrl } from '../utils/helpers';
 
 type Comment = {
   id: string; user_id: string; content: string; created_at: string;
@@ -163,11 +164,14 @@ export default function ReportDetailPage() {
         {/* Images */}
         {report.image_urls?.length > 0 && (
           <div className="grid grid-cols-3 gap-2 mb-5">
-            {report.image_urls.map((url: string, i: number) => (
-              <img key={i} src={`/uploads${url.split('/uploads')[1] ?? url}`} alt=""
-                onClick={() => window.open(url, '_blank')}
+            {report.image_urls.map((url: string, i: number) => {
+              const imageUrl = getImageUrl(url);
+              return (
+              <img key={i} src={imageUrl} alt=""
+                onClick={() => window.open(imageUrl, '_blank')}
                 className="w-full h-32 object-cover rounded-xl border border-slate-100 cursor-pointer hover:opacity-90 transition-opacity" />
-            ))}
+              );
+            })}
           </div>
         )}
 
