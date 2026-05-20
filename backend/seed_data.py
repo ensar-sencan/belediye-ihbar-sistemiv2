@@ -13,6 +13,7 @@ from app.db.base_class import Base
 from app.models.user import User
 from app.models.municipality import Municipality
 from app.models.report import Report
+from app.core.security import get_password_hash
 import uuid
 from datetime import datetime, timedelta
 
@@ -69,6 +70,9 @@ def seed_database():
         # 2. Create Users
         print("Creating users...")
         
+        # Hash password for all test users
+        test_password_hash = get_password_hash("test123")
+        
         # Admin User
         admin_user = User(
             id=uuid.uuid4(),
@@ -77,7 +81,8 @@ def seed_database():
             phone="+90 555 999 8877",
             role="ADMIN",
             is_active=True,
-            municipality_id=None
+            municipality_id=None,
+            hashed_password=test_password_hash
         )
         
         # Municipality Admin (Kadıköy)
@@ -88,7 +93,8 @@ def seed_database():
             phone="+90 216 542 5001",
             role="MUNICIPALITY_ADMIN",
             is_active=True,
-            municipality_id=kadikoy.id
+            municipality_id=kadikoy.id,
+            hashed_password=test_password_hash
         )
         
         # Regular Users
@@ -99,7 +105,8 @@ def seed_database():
             phone="+90 532 111 2233",
             role="CITIZEN",
             is_active=True,
-            municipality_id=None
+            municipality_id=None,
+            hashed_password=test_password_hash
         )
         
         user2 = User(
@@ -109,7 +116,8 @@ def seed_database():
             phone="+90 533 222 3344",
             role="CITIZEN",
             is_active=True,
-            municipality_id=None
+            municipality_id=None,
+            hashed_password=test_password_hash
         )
         
         user3 = User(
@@ -119,7 +127,8 @@ def seed_database():
             phone="+90 534 333 4455",
             role="CITIZEN",
             is_active=True,
-            municipality_id=None
+            municipality_id=None,
+            hashed_password=test_password_hash
         )
         
         db.add_all([admin_user, municipality_admin, user1, user2, user3])
@@ -245,7 +254,7 @@ def seed_database():
         print("\n" + "="*50)
         print("✅ Database seeded successfully!")
         print("="*50)
-        print("\n📋 Test Users:")
+        print("\n📋 Test Users (Password: test123):")
         print(f"   Admin:                admin@test.com")
         print(f"   Municipality Admin:  belediye@test.com")
         print(f"   Regular Users:       ahmet@test.com, ayse@test.com, mehmet@test.com")

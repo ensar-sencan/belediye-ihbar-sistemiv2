@@ -14,6 +14,7 @@ class UserBase(BaseModel):
 
 
 class UserCreate(UserBase):
+    password: str = Field(..., min_length=6, max_length=100)
     role: str = "CITIZEN"  # CITIZEN, MUNICIPALITY_STAFF, ADMIN
 
 

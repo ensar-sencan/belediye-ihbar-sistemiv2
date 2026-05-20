@@ -14,27 +14,42 @@ router = APIRouter()
 
 @router.post("/test-login")
 async def test_login(
-    credentials: UserLogin,  # ✅ Pydantic schema
+    credentials: UserLogin,
     db: Session = Depends(get_db)
 ):
     """
-    Test login endpoint - returns JWT token for testing
-    NO REAL AUTHENTICATION - ONLY FOR DEVELOPMENT
+    Login endpoint with password verification
     """
+    from app.core.security import verify_password
+    
     # Find user by email
     user = db.query(UserModel).filter(UserModel.email == credentials.email).first()
     
     if not user: 
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"User with email [{credentials.email}] not found"
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Email veya şifre hatalı"
+        )
+    
+    # Check if user has a hashed password
+    if not user.hashed_password:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Bu hesap için şifre tanımlanmamış. Lütfen yönetici ile iletişime geçin."
+        )
+    
+    # Verify password
+    if not verify_password(credentials.password, user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Email veya şifre hatalı"
         )
     
     # Create access token
-    access_token = create_access_token(data={"user_id": str(user. id)})
+    access_token = create_access_token(data={"user_id": str(user.id)})
     
     return {
-        "access_token":  access_token,
+        "access_token": access_token,
         "token_type": "bearer",
         "user": {
             "id": str(user.id),
@@ -55,21 +70,31 @@ async def get_current_user_info(
 @router.post("/register", response_model=User, status_code=status.HTTP_201_CREATED)
 async def register(
     user_in: UserCreate,
-    db:  Session = Depends(get_db)
+    db: Session = Depends(get_db)
 ):
     """
-    Register a new user (placeholder - Firebase Auth will be added later)
+    Register a new user with hashed password
     """
+    from app.core.security import get_password_hash
+    
     # Check if user already exists
     existing_user = db.query(UserModel).filter(UserModel.email == user_in.email).first()
     if existing_user: 
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already registered"
+            detail="Bu email adresi zaten kayıtlı"
         )
     
+    # Create user data dict
+    user_data = user_in.dict()
+    
+    # Hash the password if provided
+    if 'password' in user_data and user_data['password']:
+        hashed_password = get_password_hash(user_data.pop('password'))
+        user_data['hashed_password'] = hashed_password
+    
     # Create new user
-    new_user = UserModel(**user_in.dict())
+    new_user = UserModel(**user_data)
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
