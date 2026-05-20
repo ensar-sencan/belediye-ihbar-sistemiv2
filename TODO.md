@@ -367,7 +367,7 @@ python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8001
 
 ---
 
-**Son Güncelleme:** 20 Mayıs 2026, 01:30
-**Toplam Commit:** 7
+**Son Güncelleme:** 20 Mayıs 2026, 02:15
+**Toplam Commit:** 10
 **Proje Durumu:** 🟢 Aktif Geliştirme
-**Tamamlanma:** %70
+**Tamamlanma:** %75
