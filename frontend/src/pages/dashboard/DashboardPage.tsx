@@ -6,6 +6,7 @@ import {
   ClipboardList, Clock, Loader, CheckCircle, XCircle,
   TrendingUp, PlusCircle, ArrowRight, BarChart3, ThumbsUp,
 } from 'lucide-react';
+import { TrendChart, CategoryChart, StatusPieChart } from '../../components/ui/Charts';
 
 const STATUS_LABELS: Record<string, string> = {
   pending: 'Bekliyor', in_progress: 'İşlemde', resolved: 'Çözüldü', rejected: 'Reddedildi',
@@ -22,15 +23,50 @@ export default function DashboardPage() {
   const user = useAuthStore((s) => s.user);
   const navigate = useNavigate();
   const [stats, setStats] = useState<any>(null);
+  const [trendData, setTrendData] = useState<any[]>([]);
+  const [categoryData, setCategoryData] = useState<any[]>([]);
+  const [statusData, setStatusData] = useState<any[]>([]);
   const [userStats, setUserStats] = useState<any>(null);
   const [userReports, setUserReports] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (user?.role === 'ADMIN') {
-      axiosInstance.get('/admin/dashboard/stats')
-        .then(r => { setStats(r.data); setLoading(false); })
-        .catch(() => setLoading(false));
+      Promise.all([
+        axiosInstance.get('/admin/dashboard/stats'),
+        axiosInstance.get('/admin/dashboard/trends?days=7'),
+      ]).then(([statsRes, trendsRes]) => {
+        setStats(statsRes.data);
+        
+        // Format trend data
+        const formattedTrends = trendsRes.data.map((item: any) => ({
+          date: new Date(item.date).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short' }),
+          count: item.count,
+        }));
+        setTrendData(formattedTrends);
+        
+        // Format category data
+        const categoryDist = statsRes.data.category_distribution || {};
+        const formattedCategories = Object.entries(categoryDist)
+          .filter(([_, count]) => count > 0)
+          .map(([category, count]) => ({
+            name: CATEGORY_LABELS[category] || category,
+            value: count as number,
+          }));
+        setCategoryData(formattedCategories);
+        
+        // Format status data
+        const statusDist = statsRes.data.status_distribution || {};
+        const formattedStatus = Object.entries(statusDist)
+          .filter(([_, count]) => count > 0)
+          .map(([status, count]) => ({
+            name: STATUS_LABELS[status] || status,
+            value: count as number,
+          }));
+        setStatusData(formattedStatus);
+        
+        setLoading(false);
+      }).catch(() => setLoading(false));
     } else {
       Promise.all([
         axiosInstance.get('/users/me/stats'),
@@ -66,6 +102,8 @@ export default function DashboardPage() {
           </div>
           <Link to="/reports/create" className="btn-primary"><PlusCircle className="w-4 h-4" /> Yeni İhbar</Link>
         </div>
+
+        {/* İstatistik Kartları */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
           {statCards.map(({ label, value, icon: Icon, color, bg }) => (
             <div key={label} className="card">
@@ -75,6 +113,47 @@ export default function DashboardPage() {
             </div>
           ))}
         </div>
+
+        {/* Grafikler */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* Trend Grafiği */}
+          <div className="card">
+            <h3 className="text-base font-semibold text-slate-900 mb-4">📈 Son 7 Günlük Trend</h3>
+            {trendData.length > 0 ? (
+              <TrendChart data={trendData} />
+            ) : (
+              <div className="h-[300px] flex items-center justify-center text-slate-400">
+                <p>Veri bulunamadı</p>
+              </div>
+            )}
+          </div>
+
+          {/* Durum Dağılımı */}
+          <div className="card">
+            <h3 className="text-base font-semibold text-slate-900 mb-4">📊 Durum Dağılımı</h3>
+            {statusData.length > 0 ? (
+              <StatusPieChart data={statusData} />
+            ) : (
+              <div className="h-[300px] flex items-center justify-center text-slate-400">
+                <p>Veri bulunamadı</p>
+              </div>
+            )}
+          </div>
+
+          {/* Kategori Dağılımı */}
+          <div className="card lg:col-span-2">
+            <h3 className="text-base font-semibold text-slate-900 mb-4">🏷️ Kategori Dağılımı</h3>
+            {categoryData.length > 0 ? (
+              <CategoryChart data={categoryData} />
+            ) : (
+              <div className="h-[300px] flex items-center justify-center text-slate-400">
+                <p>Veri bulunamadı</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Hızlı Aksiyonlar */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[
             { to: '/reports', label: 'Tüm İhbarlar', desc: 'Listeyi görüntüle ve filtrele' },
