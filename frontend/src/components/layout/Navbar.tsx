@@ -45,7 +45,7 @@ export default function Navbar() {
             { path: '/reports/create', label: 'Yeni İhbar', icon: PlusCircle },
           ].map(({ path, label, icon: Icon }) => (
             <Link key={path} to={path}
-              className={`nav-link whitespace-nowrap `{active(path) ? 'nav-link-active' : 'nav-link-inactive'}`}>
+              className={`nav-link whitespace-nowrap ${active(path) ? 'nav-link-active' : 'nav-link-inactive'}`}>
               <Icon className="w-4 h-4" />{label}
             </Link>
           ))}
@@ -54,7 +54,7 @@ export default function Navbar() {
             { path: '/admin/reports', label: 'Yönetim', icon: Settings },
           ].map(({ path, label, icon: Icon }) => (
             <Link key={path} to={path}
-              className={`nav-link whitespace-nowrap `{active(path) ? 'nav-link-active' : 'nav-link-inactive'}`}>
+              className={`nav-link whitespace-nowrap ${active(path) ? 'nav-link-active' : 'nav-link-inactive'}`}>
               <Icon className="w-4 h-4" />{label}
             </Link>
           ))}
@@ -86,7 +86,7 @@ export default function Navbar() {
                 <p className="text-sm font-semibold text-slate-900 dark:text-white leading-none">{user?.full_name?.split(' ')[0]}</p>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{roleLabel[user?.role ?? ''] ?? 'Kullanıcı'}</p>
               </div>
-              <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 `{open ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
             </button>
 
             {open && (

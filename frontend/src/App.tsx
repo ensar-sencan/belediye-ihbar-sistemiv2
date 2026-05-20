@@ -2,6 +2,7 @@
 import { Toaster } from 'react-hot-toast';
 import { useAuthStore } from './store/authStore';
 import { ThemeProvider } from './context/ThemeContext';
+import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
 import DashboardPage from './pages/dashboard/DashboardPage';
@@ -27,6 +28,8 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
 }
 
 function App() {
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+
   return (
     <ThemeProvider>
       <BrowserRouter>
@@ -39,9 +42,9 @@ function App() {
           }}
         />
         <Routes>
+          <Route path="/" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
           <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
           <Route path="/reports" element={<ProtectedRoute><ReportsPage /></ProtectedRoute>} />
