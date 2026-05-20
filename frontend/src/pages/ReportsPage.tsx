@@ -1,5 +1,7 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
+import { useDebounce } from '../hooks/useDebounce';
 import { useNavigate } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import axiosInstance from '../lib/axios';
 import { Search, Filter, PlusCircle, MapPin, ThumbsUp, ThumbsDown, Loader, X, Map as MapIcon, List } from 'lucide-react';
 import ReportsMap from '../components/maps/ReportsMap';
@@ -10,14 +12,14 @@ type Report = {
 };
 
 const STATUS_LABELS: Record<string, string> = {
-  pending: 'Bekliyor', in_progress: 'İşlemde', resolved: 'Çözüldü', rejected: 'Reddedildi',
+  pending: 'Bekliyor', in_progress: 'Ä°ÅŸlemde', resolved: 'Ã‡Ã¶zÃ¼ldÃ¼', rejected: 'Reddedildi',
 };
 const PRIORITY_LABELS: Record<string, string> = {
-  low: 'Düşük', medium: 'Orta', high: 'Yüksek', urgent: 'Acil',
+  low: 'DÃ¼ÅŸÃ¼k', medium: 'Orta', high: 'YÃ¼ksek', urgent: 'Acil',
 };
 const CATEGORY_LABELS: Record<string, string> = {
-  pothole: 'Çukur', lighting: 'Aydınlatma', cleaning: 'Temizlik',
-  park: 'Park/Bahçe', water: 'Su/Kanalizasyon', road: 'Yol', other: 'Diğer',
+  pothole: 'Ã‡ukur', lighting: 'AydÄ±nlatma', cleaning: 'Temizlik',
+  park: 'Park/BahÃ§e', water: 'Su/Kanalizasyon', road: 'Yol', other: 'DiÄŸer',
 };
 
 export default function ReportsPage() {
@@ -47,7 +49,7 @@ export default function ReportsPage() {
         setTotalPages(Math.ceil(data.length === itemsPerPage ? page + 1 : page));
         setLoading(false);
       })
-      .catch(() => { setError('İhbarlar yüklenemedi. Sunucu başlıyor olabilir, lütfen tekrar deneyin.'); setLoading(false); });
+      .catch(() => { setError('Ä°hbarlar yÃ¼klenemedi. Sunucu baÅŸlÄ±yor olabilir, lÃ¼tfen tekrar deneyin.'); setLoading(false); });
   };
 
   useEffect(() => { loadReports(); }, [filters, page]);
@@ -73,7 +75,7 @@ export default function ReportsPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">İhbarlar</h1>
+          <h1 className="text-2xl font-bold text-slate-900">Ä°hbarlar</h1>
           <p className="text-slate-500 text-sm mt-0.5">{reports.length} ihbar listeleniyor</p>
         </div>
         <div className="flex gap-2">
@@ -92,7 +94,7 @@ export default function ReportsPage() {
             </button>
           </div>
           <button onClick={() => navigate('/reports/create')} className="btn-primary">
-            <PlusCircle className="w-4 h-4" /> Yeni İhbar
+            <PlusCircle className="w-4 h-4" /> Yeni Ä°hbar
           </button>
         </div>
       </div>
@@ -118,15 +120,15 @@ export default function ReportsPage() {
               className="input pl-9" />
           </div>
           <select value={filters.category} onChange={(e) => setFilters({ ...filters, category: e.target.value })} className="input">
-            <option value="">Tüm Kategoriler</option>
+            <option value="">TÃ¼m Kategoriler</option>
             {Object.entries(CATEGORY_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
           </select>
           <select value={filters.status} onChange={(e) => setFilters({ ...filters, status: e.target.value })} className="input">
-            <option value="">Tüm Durumlar</option>
+            <option value="">TÃ¼m Durumlar</option>
             {Object.entries(STATUS_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
           </select>
           <select value={filters.priority} onChange={(e) => setFilters({ ...filters, priority: e.target.value })} className="input">
-            <option value="">Tüm Öncelikler</option>
+            <option value="">TÃ¼m Ã–ncelikler</option>
             {Object.entries(PRIORITY_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
           </select>
         </div>
@@ -142,7 +144,7 @@ export default function ReportsPage() {
       {/* List View */}
       {viewMode === 'list' && (reports.length === 0 ? (
         <div className="card text-center py-16">
-          <p className="text-slate-400 text-lg">Hiç ihbar bulunamadı</p>
+          <p className="text-slate-400 text-lg">HiÃ§ ihbar bulunamadÄ±</p>
           {hasFilters && (
             <button onClick={clearFilters} className="mt-3 text-sm text-indigo-600 hover:underline">
               Filtreleri temizle
@@ -191,7 +193,7 @@ export default function ReportsPage() {
             disabled={page === 1}
             className="px-4 py-2 rounded-lg border border-slate-200 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            Önceki
+            Ã–nceki
           </button>
           <div className="flex items-center gap-1">
             {[...Array(Math.min(5, totalPages))].map((_, i) => {
